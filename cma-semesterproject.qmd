@@ -1,0 +1,17 @@
+---
+title: "cma-semesterproject"
+---
+
+## load data
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+Report should:
+• be written in a scientific writing style.
+• around 30’000 characters, not exceed 50’000 (including spaces)
+• typically include text, maps, plots, appendices, code and references.
+• be written using Quarto (see sample File in the template Repo)
+
+```{r}
+1 + 1
+```
