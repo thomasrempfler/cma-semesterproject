@@ -1,0 +1,471 @@
+---
+title: "trajectories"
+format: html
+
+---
+
+# Report should:
+
+  1. be written in a scientific writing style. 
+  2. around 30'000 characters, not exceed 50'000 (including spaces) 
+  3. typically include text, maps, plots, appendices, code and references. 
+  4. written using Quarto (see sample File in the template Repo)
+
+To learn more about Quarto see <https://quarto.org>.
+
+```{r}
+rm(list=ls())
+
+```
+
+```{r}
+library(devtools)
+library(tidyverse)
+library(sf)
+library(sfheaders)
+devtools::install_github("benmarwick/wordcountaddin",  type = "source", dependencies = TRUE)
+library(wordcountaddin)
+# library(plotly)
+
+```
+
+## Data description
+
+(Insert table)
+
+```{r}
+# load data
+locs <- fread("Q:/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/code/movement/migration/origdata/locs_migration.csv") %>% 
+  st_as_sf(coords = c("x", "y"), crs = 2056, remove = FALSE) %>% 
+  group_by(deployment) %>% 
+  mutate(ele_min = min(ele), ele_max = max(ele), ele_diff = ele_max - ele_min) %>% 
+  ungroup()
+
+```
+
+```{r}
+# moving vs. static locs
+locs_static <- locs %>%
+  filter(in_range == TRUE) %>%
+  # group_by(deployment) %>% 
+  mutate(static = stepMean30 < mean(stepMean30, na.rm = TRUE)) %>% 
+  ungroup()
+
+```
+
+```{r}
+# number the trajectory segments
+# function
+rle_id <- function(vec) {
+    x <- rle(vec)$lengths
+    as.factor(rep(seq_along(x), times = x))
+}
+
+locs_seg_nr <- locs_static %>% 
+  # filter(!is.na(static)) %>% 
+  # filter(month(t) %in% c(5,6)) %>% 
+  group_by(deployment) %>% 
+  mutate(segment_id = rle_id(static))
+
+check_seg <- locs_seg_nr %>% 
+  group_by(deployment) %>% 
+  distinct(static) %>% count()
+  
+```
+
+## Migrating vs. non-migrating individuals
+
+The calculation of mean steps in a window of 30 days for each location (now - 15 days to now + 15 days) resulted in a total mean step of `r as.integer(mean(locs$stepMean30))`.
+
+
+### Static and moving phases of trajectories
+
+With the calculation of mean steps in a window of 30 days, at the beginning and in the end of the individual trajectories incomplete steps were generated which I have removed.
+
+
+```{r}
+# table with counts of locations (static vs. moving)
+t1 <- locs_static %>% 
+  sf_to_df(fill = TRUE) %>% dplyr::select(-c(sfg_id, point_id, x..1, y..1)) %>% 
+  group_by(deployment) %>%
+  # distinct(deployment, static) %>% 
+  count(static) %>% 
+  spread(static, n, fill = 0) %>% 
+  ungroup() %>% 
+  rename(Static = "TRUE", Moving = "FALSE") %>% 
+  mutate(movtostat = Moving/Static)
+t1
+```
+
+```{r}
+# export to shp per deployment
+
+for (i in unique(locs_static$deployment)){
+  
+  # construct name of graph file
+      name <- paste("d",
+                    i, 
+                    "static.shp",
+                    sep = "_"
+                    )
+  
+  # plot
+      depl_static <- locs_static %>% 
+        filter(deployment == i) 
+  
+  # save as shp
+      st_write(depl_static, 
+             paste0("Q:/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/gis_work/depl_migration/",name), delete_layer = TRUE)
+      
+}
+
+
+```
+
+
+## Shorter window (2 days) with only 3 individuals
+```{r}
+#| echo: false
+
+# calculate stepMean2 (= +/- 1 day) for 3 ids only
+
+# load data
+locs_win1 <- fread("Q:/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/code/movement/migration/origdata/locs_win1.csv") %>% 
+  st_as_sf(coords = c("x", "y"), crs = 2056, remove = FALSE) %>% 
+  filter(id %in% c(20208, 20211, 20215)) 
+
+# calculate stepMean2
+# create output table
+output <- data.frame(loc_nr = numeric(),
+                     deployment = logical(),
+                     dep_nr = numeric(),
+                     t = POSIXct(),
+                     t_min1 = POSIXct(),
+                     t_plus1 = POSIXct(),
+                     x = numeric(),
+                     y = numeric(),
+                     in_range = logical(),
+                     stepMean2 = numeric())
+
+
+
+# loop through deployments and locs
+for (d in unique(locs_win$dep_num)){
+  
+  locs_win_filter <- locs_win %>%
+    filter(dep_num == d) %>%
+    mutate(t_range = interval(min(t), max(t)),
+           in_range = case_when(t_min1 %within% t_range &
+                                  t_plus1 %within% t_range ~ TRUE,
+                                TRUE ~ FALSE)) %>%
+  dplyr::select(-t_range)
+  
+  
+  for (l in 1:nrow(locs_win_filter)){
+    
+    # filter for data of current loop run
+    now <- locs_win_filter[l,]
+    
+    obs_win <-  locs_win_filter %>% 
+      filter(t >= as.POSIXct(now$t_min1, tz = "UTC"),
+             t <= as.POSIXct(now$t_plus1, tz = "UTC")) 
+    
+    # calculate and append stepMean32 to now
+    now$stepMean2 <- st_distance(obs_win, now) %>% as.numeric() %>% mean()
+    
+    # append now to output
+    output <- rbind(output, now)
+    
+  }
+  
+print("dep_num fertig")
+  
+}
+
+fwrite(output, paste0("//marmota/gisdata/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/code/movement/migration/data_work/win1_3ids/output_win1_3ids.csv"))
+
+
+# join with locs
+# convert the list in a data frame and check
+output_win1_3ids <- fread("//marmota/gisdata/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/code/movement/migration/data_work/win1_3ids/output_win1_3ids.csv") %>% 
+  rename(in_range1 = in_range) %>% 
+  dplyr::select(loc_nr, t_min1, t_plus1, in_range1, stepMean2)
+
+locs_win1_3ids <- locs %>%
+  right_join(output_win1_3ids, by = "loc_nr")
+
+fwrite(locs_win1_3ids,"//marmota/gisdata/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/code/movement/migration/origdata/locs_mig_win1_3ids.csv",
+       row.names = FALSE, sep = ";")
+
+
+# moving vs. static locs
+locs_static_win1_3ids <- locs_win1_3ids %>%
+  filter(in_range1 == TRUE) %>%
+  # group_by(deployment) %>% 
+  mutate(static1 = stepMean2 < mean(stepMean2, na.rm = TRUE)) %>% 
+  ungroup()
+
+
+# NUmmerierung der seg
+
+
+# create table with static and moving points
+t1a <- locs_static_win1_3ids %>% 
+  sf_to_df(fill = TRUE) %>% dplyr::select(-c(sfg_id, point_id, x..1, y..1)) %>% 
+  group_by(deployment) %>%
+  # distinct(deployment, static) %>% 
+  count(static1) %>% 
+  spread(static1, n, fill = 0) %>% 
+  ungroup() %>% 
+  rename(Static = "TRUE", Moving = "FALSE") %>% 
+  mutate(movtostat = Moving/Static)
+t1a
+
+```
+
+
+```{r}
+# EXPLORATION!
+
+
+# plot stepMeans
+locs %>%
+  filter(in_range == TRUE) %>%
+  ggplot(aes(stepMean30)) +
+    geom_histogram(binwidth = 10) +
+    geom_vline(xintercept = mean(locs$stepMean30, na.rm = TRUE))
+
+test_locs <- locs %>% 
+    filter(in_range == TRUE) %>%
+    filter(id %in% c("20208", "20211", "20215"))
+
+# st_write(test_locs, "//marmota/gisdata/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/gis_work/test_mig.shp", delete_layer = TRUE)
+
+# moving vs. static locs
+locs_static <- locs %>%
+  filter(in_range == TRUE) %>%
+  group_by(deployment) %>% 
+  mutate(static = stepMean30 < mean(stepMean30, na.rm = TRUE)) %>% 
+  ungroup()
+
+test_static_grp <- locs_static %>% 
+  filter(id %in% c("20208", "20211", "20215"))
+table(test_static_grp$static, test_static_grp$id)
+table(test_static$static, test_static$id)
+
+st_write(test_static_grp, "//marmota/gisdata/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/gis_work/test_mig_static1.shp", delete_layer = TRUE) # für Abb.
+
+locs_static2 <- locs %>%
+  filter(in_range == TRUE) %>%
+  mutate(static = stepMean30 < mean(stepMean30, na.rm = TRUE)*2)
+
+test_static2 <- locs_static2 %>% 
+  filter(id %in% c("20208", "20211", "20215"))
+table(test_static2$static)
+
+st_write(test_static2, "//marmota/gisdata/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/gis_work/test_mig_static2.shp", delete_layer = TRUE) # für Abb.
+
+locs_static3 <- locs %>%
+  filter(in_range == TRUE) %>%
+  mutate(static = stepMean30 < mean(stepMean30, na.rm = TRUE)*3)
+
+test_static3 <- locs_static3 %>% 
+  filter(id %in% c("20208", "20211", "20215"))
+table(test_static3$static)
+
+st_write(test_static3, "//marmota/gisdata/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/gis_work/test_mig_static3.shp", delete_layer = TRUE) # für Abb.
+
+test_static  %>%
+  ggplot(aes(x, y)) +
+  geom_path() +
+  geom_point() +
+  coord_fixed() +
+  theme(legend.position = "bottom") +
+  facet_grid(id ~ .)
+
+locs_moving <- locs_static %>%
+  filter(in_range == TRUE) %>%
+  filter(!static)
+
+test_moving <- locs_moving %>% 
+  filter(id %in% c("20208", "20211", "20215"))
+
+st_write(test_moving, "//marmota/gisdata/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/gis_work/test_mig_moving.shp", delete_layer = TRUE) # für Abb.
+
+test_moving  %>%
+  ggplot(aes(x, y)) +
+  geom_path() +
+  geom_point() +
+  coord_fixed() +
+  theme(legend.position = "bottom") +
+  facet_grid(id ~ .)
+
+locs_moving  %>%
+  ggplot(aes(x, y)) +
+  geom_path() +
+  geom_point() +
+  coord_fixed() +
+  theme(legend.position = "bottom") +
+  facet_grid(id ~ .)
+```
+
+
+## Birthdays
+```{r}
+# function to number trajectory segments
+rle_id <- function(vec) {
+    x <- rle(vec)$lengths
+    as.factor(rep(seq_along(x), times = x))
+}
+
+# df with months may to june only
+locs_sel <- locs %>% 
+  filter(month(t) %in% c(5:6)) %>% 
+  dplyr::select(id, Animal_no, deployment, sex, study, t, x, y, loc_nr) %>% 
+  rename(X = x, Y = y) %>% 
+  mutate(sex = case_when(sex == "f" ~ "Female",
+                         TRUE ~ "Male"))
+
+
+# prepare output
+output <- data.frame(id = numeric(),
+                     Animal_no = character(),
+                     deployment = character(),
+                     sex = character(),
+                     study = character(),
+                     t = POSIXct(),
+                     X = numeric(),
+                     Y = numeric(),
+                     loc_nr = numeric(),
+                     duration = numeric(),
+                     doy = numeric())
+
+# calculate static with min movement
+
+  for (i in unique(locs_sel$deployment)){
+    
+    # calculate distances to 2 previous and 2 following locations
+        locs_cal <- locs_sel  %>%  
+          filter(deployment == i) %>% 
+          mutate(
+              n_plus1 = sqrt((lead(X) - X)^2 + (lead(Y) - Y)^2),
+              n_plus2 = sqrt((lead(X, 2) - X)^2 + (lead(Y, 2) - Y)^2),
+              n_minus1 = sqrt((lag(X) - X)^2 + (lag(Y) - Y)^2),
+              n_minus2 = sqrt((lag(X, 2) - X)^2 + (lag(Y, 2) - Y)^2)
+                 ) %>% 
+          rowwise()  %>%
+          mutate(stepMeanBirth = mean(c(n_minus1, n_minus2, n_plus1, n_plus2))
+                 ) %>% 
+          ungroup() %>%
+          mutate(static = stepMeanBirth < mean(stepMeanBirth, na.rm = TRUE))
+
+    # define static and moving segments
+        locs_seg <- locs_cal %>% 
+          filter(!is.na(static)) %>% 
+          # filter(month(t) %in% c(5,6)) %>% 
+          mutate(segment_id = rle_id(static))
+
+    # calculate duration of static segments
+        locs_dur <- locs_seg %>% 
+          filter(static) %>% 
+          group_by(segment_id)  %>% 
+          mutate(duration = as.numeric(difftime(max(t), min(t), units = "hours"))) %>% 
+          mutate(doy = yday(t), meanDoy = mean(doy), year = year(t)) %>% 
+          ungroup() 
+        
+        plot_locs_dur <- locs_dur %>%
+          ggplot(aes(meanDoy, duration, colour = sex)) +
+          geom_line() +
+          facet_grid(year ~ .) +
+          xlab("Day of year") +
+          ylab("Duration of static segment") +
+          guides(colour = guide_legend("Sex")) +
+          theme_bw()
+
+    # construct name of graph file
+        name <- paste(locs_cal$sex,
+                      locs_cal$study,
+                      i, 
+                      "static.png",
+                      sep = "_"
+                      )
+    # save plot
+       ggsave(plot_locs_dur, 
+             file = paste0("Q:/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/code/movement/migration/graphs/birthday/", name), width = 8, height = 5)
+    
+       # filter for segment with longest duration
+        seg_max <- locs_dur %>% 
+          group_by(year) %>% 
+          filter(duration == max(duration)) %>% 
+          filter(doy == min(doy)) %>% 
+          filter(t == min(t)) %>% 
+          dplyr::select(-c(n_plus1, n_plus2, n_minus1, n_minus2)) 
+
+    # append output_temp to output
+        output <- rbind(output, seg_max)
+        
+  }
+
+
+fwrite(output, "Q:/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/code/movement/migration/data_pub/birthday.csv", sep = ";")
+
+
+# plot "birthdays" per sex and study area
+plot_bdays <- output %>%
+  filter(sex == "Female") %>% 
+  ggplot(aes(doy)) +
+  geom_histogram() +
+  facet_grid(study ~ .) +
+  xlab("Day of year") +
+  # ylab("Duration of static segment") +
+  guides(colour = guide_legend("Sex")) +
+  theme_bw() +
+  scale_x_continuous(breaks = seq(120, 180, by = 10))  
+
+ggsave(plot_bdays, 
+             file = paste0("Q:/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/code/movement/migration/graphs/birthday/", name), width = 8, height = 5)
+```
+
+
+## Elevation
+```{r}
+# plot weekly elevation means per id
+locs_mean_ele <- locs %>%
+  mutate(year = year(t), week = week(t)) %>%
+  group_by(id, year, week) %>%
+  summarise(ele_week_mean = mean(ele)) %>% ungroup() %>% 
+  group_by(id, year) %>% 
+  mutate(mean_week_mean = mean(ele_week_mean))
+
+# loop through deployments and locs
+for (i in unique(locs_mean_ele$id)){
+  
+  # construct name of graph file
+      name <- paste("id",
+                    i, 
+                    "ele.png",
+                    sep = "_"
+                    )
+  
+  # plot
+      plot_ele <- locs_mean_ele %>% 
+        filter(id == i) %>% 
+        ggplot(aes(week, ele_week_mean, colour = factor(year))) +
+        geom_point() +
+        geom_line() +
+        geom_hline(yintercept = locs_mean_ele$mean_week_mean[i]) +
+        xlab("Week") +
+        ylab("Mean elevation [m a.s.l.]") +
+        guides(colour = guide_legend("Year")) +
+        theme_classic() +
+        scale_x_continuous(breaks = seq(0, 53, by = 10))  
+  
+  # save plot
+      ggsave(plot_ele, 
+             file = paste0("Q:/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/code/movement/migration/graphs/elevation/",
+                           name), width = 8, height = 5)
+      
+}
+
+```
+
