@@ -71,16 +71,76 @@ ul.task-list li input[type="checkbox"] {
 <h2 class="anchored" data-anchor-id="report-should">Report should:</h2>
 <ol type="1">
 <li>be written in a scientific writing style.</li>
-<li>around 30’000 characters, not exceed 50’000 (including spaces)</li>
+<li>around 15’000 characters, not exceed 20’000 (including spaces)</li>
 <li>typically include text, maps, plots, appendices, code and references.</li>
 <li>written using Quarto (see sample File in the template Repo)</li>
 </ol>
+<!-- ```{r setup, include=FALSE} -->
+<!-- knitr::opts_chunk$set(echo = TRUE) -->
+<!-- ``` -->
 </section>
-<section id="background" class="level2">
-<h2 class="anchored" data-anchor-id="background">Background</h2>
+<section id="background" class="level1">
+<h1>Background</h1>
+<p>The existence of red deer (Cervus elaphus) is affected by feeding, reproduction and the avoidance of predators (Clutton-Brock, Guinness and Albon, 1982). The concept of the «landscape of fear» represents relative levels of predation risk as peaks and valleys that reflect the level of fear of predation a prey animal experiences in different parts of its home range (Laundré, Hernández and Ripple, 2010). Canadian studies on elk (Cervus elaphus canadensis) have shown that in human-dominated landscapes, effects on red deer behaviour caused by human disturbance exceed those of habitat and natural predators (Ciuti et al., 2012). Humans triggered increased vigilance and decreased foraging in elk. Human activity is identified as the strongest driver of red deer movement (Mumme et al., 2023). They highly respond to disturbance from human recreational activities by increasing their level of vigilance, but the nature of their response varies with the level of cover available, and they perceive hunting as a more acute threat than human recreation (Jayakody et al., 2008). Even red deer which appear to be habituated to regular disturbance within their home territory may alter their behaviour and avoid hiking trails (Sibbald et al., 2011). As human activity is mainly concentrated on daytime, red deer can alter their diurnal behaviour, avoid humans during the day and compensate with activity at night (Godvik et al., 2009; Coppes et al., 2017). Red deer populations in highly seasonal environments show partial migration, meaning that there are migratory and resident individuals in one population, but the proportion can vary between populations (Mysterud et al., 2011). Habitat selection of red deer in montane to alpine habitats depends on the stage of green-up, the migrant strategy, landscape characteristics and human presence (Sigrist et al., 2022). During the green-up season migratory individuals have access to higher quality forage than resident. In addition, red deer prefer flat terrain, lower elevation and higher solar radiation, but avoid habitats with possible exposure to human activity, i.e.&nbsp;small distance to roads and trails, great distance to forest or light shrub cover. The onset of hunting triggers stronger fear reactions in red deer, i.e.&nbsp;increased flight initiation distance, increased time spent outside the home range and preference for dense resting sites, what may affect red deer distribution and harvesting efficiency (Meisingset et al., 2022). To protect red deer from hunting and from human disturbance authorities and managers in the Alps designate different types of hunting ban areas (HBA), while the evidence of their effect on red deer behaviour and habitat selection is lacking. However, the arrangement of multiple HBA’s per study area offers an experimental study design to compare habitat selection inside versus outside HBA.</p>
+<p>Fellmann… Even though there have been developed several methods to classify migration behaviour of red deer I want to test a self developed method.</p>
 </section>
+<section id="methods" class="level1">
+<h1>Methods</h1>
+<p>We have GPS locations of red deer in six study areas (fig.&nbsp;1). For the development of the method I concentrated on only 1 individual. The next step would be to apply the method to many individuals.</p>
 <section id="data-description" class="level2">
 <h2 class="anchored" data-anchor-id="data-description">Data description</h2>
+<section id="static-and-moving-phases-of-trajectories" class="level3">
+<h3 class="anchored" data-anchor-id="static-and-moving-phases-of-trajectories">Static and moving phases of trajectories</h3>
+<p>With the calculation of mean steps in a window of 30 days, at the beginning and in the end of the individual trajectories incomplete steps were generated which I have removed.</p>
+<p>Diskussion: - Problem year, weil dann neues mcp im Übergang zum Jahreswechsel - mcp merge</p>
+</section>
+</section>
+<section id="migrating-vs.-non-migrating-individuals" class="level2">
+<h2 class="anchored" data-anchor-id="migrating-vs.-non-migrating-individuals">Migrating vs.&nbsp;non-migrating individuals</h2>
+<p>The calculation of mean steps in a window of 30 days for each location (location now - 15 days to now + 15 days) resulted in step mean thresholds of 953 for a 75 % quantile, 2904 for a 90 % quantile and 4747 for a 95 % quantile and .</p>
+<p>Vorteile: - Start nicht abhängig von einem gesetzten Starttermin (!= Ursula: 1. März)</p>
+<p>Nachteile: - Verlust der ersten und letzten 15 Tage - Viele Segmente (!= Ursula)</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-plot1" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="index_files/figure-html/fig-plot1-1.png" class="img-fluid figure-img" width="1344"></p>
+<p></p><figcaption class="figure-caption"><em>Figure</em>&nbsp;1<em>.</em> <em>Classification of yearly trajectories into migrating and static segments with quantile thresholds of step means of 75 % (A), 90 % (B) and 95 % (C).</em></figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-plot2" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="index_files/figure-html/fig-plot2-1.png" class="img-fluid figure-img" width="1344"></p>
+<p></p><figcaption class="figure-caption"><em>Figure</em>&nbsp;2<em>.</em> <em>Yearly migrating and static segments of the trajectories with a quantile thresholds of step means of 95%.</em></figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-plot3" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="index_files/figure-html/fig-plot3-1.png" class="img-fluid figure-img" width="1344"></p>
+<p></p><figcaption class="figure-caption"><em>Figure</em>&nbsp;3<em>.</em> <em>Yearly migration segments of the trajectories, but instead of only seasonal migrations, with excurions included.</em></figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-plot4" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="index_files/figure-html/fig-plot4-1.png" class="img-fluid figure-img" width="1344"></p>
+<p></p><figcaption class="figure-caption"><em>Figure</em>&nbsp;4<em>.</em> <em>Yearly seasonal migrations and home ranges, without excursions.</em></figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
 </section>
 
 </main>
