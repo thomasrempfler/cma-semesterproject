@@ -1,6 +1,7 @@
 ---
-title: "Red Deer Trajectories - A method for Segmentation into Seasonal Homeranges"
+title: "A Method to detect Seasonal Migration Patterns in Red Deer Data"
 author: "Thomas Rempfler"
+date: "Date created: 2023-07-02"
 format:
   html:
     code-fold: true     # makes the code in the output collapsable
@@ -12,24 +13,9 @@ crossref:
  fig-title: '*Figure*'
  fig-labels: arabic
  title-delim: "*.*"
+bibliography: references.bib
+csl: the-journal-of-wildlife-management.csl
 ---
-
-
-
-## Report should:
-
-  1. be written in a scientific writing style. 
-  2. around 15'000 characters, not exceed 20'000 (including spaces) 
-  3. typically include text, maps, plots, appendices, code and references. 
-  4. written using Quarto (see sample File in the template Repo)
-
-
-
-
-<!-- ```{r setup, include=FALSE} -->
-<!-- knitr::opts_chunk$set(echo = TRUE) -->
-<!-- ``` -->
-
 
 ```{r, include=FALSE}
 rm(list=ls())
@@ -37,12 +23,13 @@ rm(list=ls())
 ```
 
 ```{r packages, include=FALSE}
-# library(knitr)
+library(knitr)
+library(here)
 library(tidyverse)
 library(data.table)
 library(lubridate)
 library(sf)
-library(gt)
+# library(gt)
 library(ggplot2)
 library(patchwork)
 library(sfheaders)
@@ -53,38 +40,68 @@ library(wordcountaddin)
 
 ```
 
-# Background
-The existence of red deer (Cervus elaphus) is affected by feeding, reproduction and the avoidance of predators (Clutton-Brock, Guinness and Albon, 1982). The concept of the «landscape of fear» represents relative levels of predation risk as peaks and valleys that reflect the level of fear of predation a prey animal experiences in different parts of its home range (Laundré, Hernández and Ripple, 2010). Canadian studies on elk (Cervus elaphus canadensis) have shown that in human-dominated landscapes, effects on red deer behaviour caused by human disturbance exceed those of habitat and natural predators (Ciuti et al., 2012). Humans triggered increased vigilance and decreased foraging in elk. Human activity is identified as the strongest driver of red deer movement (Mumme et al., 2023). They highly respond to disturbance from human recreational activities by increasing their level of vigilance, but the nature of their response varies with the level of cover available, and they perceive hunting as a more acute threat than human recreation (Jayakody et al., 2008). Even red deer which appear to be habituated to regular disturbance within their home territory may alter their behaviour and avoid hiking trails (Sibbald et al., 2011). As human activity is mainly concentrated on daytime, red deer can alter their diurnal behaviour, avoid humans during the day and compensate with activity at night (Godvik et al., 2009; Coppes et al., 2017).
-Red deer populations in highly seasonal environments show partial migration, meaning that there are migratory and resident individuals in one population, but the proportion can vary between populations (Mysterud et al., 2011). Habitat selection of red deer in montane to alpine habitats depends on the stage of green-up, the migrant strategy, landscape characteristics and human presence (Sigrist et al., 2022). During the green-up season migratory individuals have access to higher quality forage than resident. In addition, red deer prefer flat terrain, lower elevation and higher solar radiation, but avoid habitats with possible exposure to human activity, i.e. small distance to roads and trails, great distance to forest or light shrub cover. The onset of hunting triggers stronger fear reactions in red deer, i.e. increased flight initiation distance, increased time spent outside the home range and preference for dense resting sites, what may affect red deer distribution and harvesting efficiency (Meisingset et al., 2022). To protect red deer from hunting and from human disturbance authorities and managers in the Alps designate different types of hunting ban areas (HBA), while the evidence of their effect on red deer behaviour and habitat selection is lacking. However, the arrangement of multiple HBA’s per study area offers an experimental study design to compare habitat selection inside versus outside HBA.
+## Background and Research Goals
+
+Ungulates use their habitats heterogeneously, prefer and avoid certain habitat parameters and adapt their behaviour to circumstances [@Allen2014]. The existence of red deer (*Cervus elaphus*) is affected by feeding, reproduction and the avoidance of predators [@Clutton-Brock1982]. The concept of the «landscape of fear» represents relative levels of predation risk as peaks and valleys that reflect the level of fear of predation a prey animal experiences in different parts of its home range [@Laundre2010]. Canadian studies on elk (*Cervus elaphus canadensis*) have shown that in human-dominated landscapes, effects on red deer behaviour caused by human disturbance exceed those of habitat and natural predators [@Ciuti2012]. A comparison of red deer behaviour in America and Europe led to the conclusion that human activity is identified as the strongest driver of red deer movement [@Mumme2023].
+
+Red deer populations in highly seasonal environments show partial migration, meaning that there are migratory and resident individuals in one population, but the proportion can vary between populations [@Mysterud2011]. Their preferences for habitat parameters in rugged mountain areas are associated with forage quality [@Zweifel-Schielly2009] and high biomass [@Schweiger2015; @Zweifel-Schielly2012]. During the green-up season migratory individuals have access to higher quality forage than resident. Thus, habitat selection of red deer in montane to alpine habitats depends on human presence, landscape characteristics, the stage of vegetation phenology (green-up), and the migrant strategy [@Sigrist2022].
+
+Understanding the behaviour of ungulates is highly related with the knowledge about their movement. Despite the fact that migration is a well-known and widespread ecological phenomenon, there is still no consensus on how to describe and define it [@Cagnacci2011; @Dingle2007]. Many methods have in common that they tackle the movement ecology paradigm of organismal movement [@Nathan2008] regarding their specific questions: The internal state (why move?), motion (how to move?), and navigation (when and where to move?).
+
+Methods to analyse movement often start with separating migrating from non-migrating individuals. Trajectories, i.e. the spatiotemporal footprint of a moving and tracked object [@Laube2017], are split into moving and static segments. We are interested in red deer, whether they seasonally migrate and if so, when and where. Thus, we applied a method using the QGIS plug-in "MigrO" to detect segments of minimum 30 days residency, i.e. home ranges [@Fellmann2022]. Concluding from these home ranges and the timestamp entering and leaving them we detected static and moving segments of the trajectories. We got good results, but the method had its disadvantages. First, we had to set a start date for the algorithm. We took the 1st of March, as we expected red deer at that time still to stay in their winter habitats. Due to these settings we lost static segments in the transition from February to March. A second disadvantage was the need of much handwork, as some attributes had to be added manually, e.g. the classification into migrant and non-migrant individuals. Thus, in this exercise I want to develop another method to describe red deer migrations and answer the main research questions:
+
+1)  How to find start and end dates in red deer trajectories, and how long do they last?
+
+2)  How do these results perform compared to the "MigrO method"?
 
 
-Fellmann...
-Even though there have been developed several methods to classify migration behaviour of red deer I want to test a self developed method. 
+## Methods
 
+Note: I preprocessed a dataset of 322 red deer individuals. For the further steps I then concentrated on only one individual and developed the algorithm. Finally, I applied the algorithm to another example individual to test its performance. The goal is to process all individuals in a future next step.
 
-# Methods
-We have GPS locations of red deer in six study areas (fig. 1). For the development of the method I concentrated on only 1 individual. The next step would be to apply the method to many individuals. 
+### Data Description
 
+I used data from six telemetry studies across the Alps, i.e. from western Austria, northern Italy, Liechtenstein, as well as eastern and southern Switzerland (Figure 1). They cover montane to alpine habitats of red deer in a) inner alpine valleys of the east (studies RSN and ING, Swiss National Park with its surrounding areas in the canton of Grisons, Tyrol, the Autonomous province of Bolzano -- South Tyrol and the province of Sondrio), and b) of the west (study VAL in the canton of Valais and the province Verbano -- Cusio -- Ossola), in c) the Swiss northeastern Pre-Alps and Alps (study ASG in the cantons of Appenzell Inner-Rhodes, Appenzell Outer-Rhodes and St. Gallen and study RAE with Liechtenstein, Vorarlberg and the canton of Grisons), and in d) the alpine south (study TIG in the cantons of Grisons and Ticino and provinces of Como, Lecco and Sondrio).
 
-## Data description
-
-
-
-
-
-### Static and moving phases of trajectories
-
-With the calculation of mean steps in a window of 30 days, at the beginning and in the end of the individual trajectories incomplete steps were generated which I have removed.
-
-
-
-```{r, data, include=FALSE}
-# load data of all individuals
-locs <- fread("C:/Users/trempfler/Desktop/r_cma/semester_project/cma-semesterproject/data/locs_migration.csv") |> 
-  st_as_sf(coords = c("x", "y"), crs = 2056, remove = FALSE)
+```{r  fig-plot1, fig.cap = "*Study areas with GPS locations.*", echo=FALSE}
+knitr::include_graphics(here("images", "fig1_gps_study_areas.png"))
 
 ```
 
+### Trajectory Segmentation
+
+To identify static and moving segments of trajectories I followed an adapted four step processing [@Laube2011] (Figure 2).
+
+```{r  fig-plot2, fig.cap = "*Scheme of trajectory segmentation.*", echo=FALSE}
+knitr::include_graphics(here("images", "laube_traj_seg.JPG"))
+
+```
+
+#### Preprocessing
+
+a)  First, I defined a temporal window of +/- 15 days, according to the "MigrO method", which defined segments of minimum 30 days residency as home ranges [@Fellmann2022] (Appendix).
+b)  Second, I calculated the mean of all distances from one location within this 30 days window to every other location, grouped by individuals.
+
+
+#### Static and Moving Segments of Trajectories
+
+c)  From this third step on I continued with only one individual. Within the first 15 days and within the last 15 days of the individual trajectory mean distances were calculated on incomplete 30 days windows. Thus, I have removed them to prevent bias. To detect moving segments of the trajectory I then explored thresholds for the mean distances of the 30 days windows of 75 % quantile, 90 % and 95 %. Based on the static segments I calculated home ranges using the method of convex hull.
+
+
+#### Extraction of Seasonal Migration Segments
+
+d)  As the intermediate value the 90 % quantile threshold fitted best I merged all overlaying convex hulls per year and buffered with 1000 m, followed by an intersection with the locations. The remaining segments contain seasonal migration, i.e. migration between summer and winter home range, and excursions. The migrations I extracted finally by setting a threshold of greater than 2000 m for the distance between the start and end locations of the segments, because excursions might have their start and end location close by.
+
+
+## Results
+
+```{r, data, include=FALSE}
+# load data of all individuals as sf
+locs <- fread("C:/Users/trempfler/Desktop/r_cma/semester_project/cma-semesterproject/data/locs_migration.csv") |> 
+  st_as_sf(coords = c("x", "y"), crs = 2056, remove = FALSE) |> 
+  mutate(t = as.POSIXct(t), tz = "UTC")
+
+```
 
 ```{r, function_seg_id, include=FALSE}
 # function to number trajectory segments
@@ -95,9 +112,9 @@ rle_id <- function(vec) {
 
 ```
 
-Diskussion:
-- Problem year, weil dann neues mcp im Übergang zum Jahreswechsel
-- mcp merge
+
+#### Static and Moving Segments of Trajectories
+
 
 ```{r, vars, include=FALSE}
 # select 1 example individual (deployment) and set threshold of the step mean of 30 days to 75 % quantile
@@ -105,15 +122,15 @@ depl_1_q75 <- locs |>
   group_by(deployment) |> 
   filter(deployment == "9919379_20211") |> 
   filter(in_range == TRUE) |> 
-  mutate(Migration = stepMean30 > quantile(stepMean30, probs = .75)) %>% 
-  mutate(seg_id = rle_id(Migration)) |> 
+  mutate(Moving = stepMean30 > quantile(stepMean30, probs = .75)) %>% 
+  mutate(seg_id = rle_id(Moving)) |> 
   mutate(year = year(t)) |> 
-  select(loc_nr, id, x, y, t, year, stepMean30, in_range, seg_id, Migration) |> 
+  select(loc_nr, id, x, y, t, year, stepMean30, in_range, seg_id, Moving) |> 
   ungroup()
 
 # calculate convex hull of 75 % quantile
 ch_depl_1_q75 <- depl_1_q75  |>  
-  filter(!Migration) |> 
+  filter(!Moving) |> 
   group_by(year, seg_id) |> 
   summarise() |>  
   st_convex_hull() |> 
@@ -125,15 +142,15 @@ depl_1_q90 <- locs |>
   group_by(deployment) |> 
   filter(deployment == "9919379_20211") |> 
   filter(in_range == TRUE) |> 
-  mutate(Migration = stepMean30 > quantile(stepMean30, probs = .9)) %>% 
-  mutate(seg_id = rle_id(Migration)) |> 
+  mutate(Moving = stepMean30 > quantile(stepMean30, probs = .9)) %>% 
+  mutate(seg_id = rle_id(Moving)) |> 
   mutate(year = year(t)) |> 
-  select(loc_nr, id, x, y, t, year, stepMean30, in_range, seg_id, Migration) |> 
+  select(loc_nr, id, x, y, t, year, stepMean30, in_range, seg_id, Moving) |> 
   ungroup()
 
 # calculate convex hull
 ch_depl_1_q90 <- depl_1_q90  |>  
-  filter(!Migration) |> 
+  filter(!Moving) |> 
   group_by(year, seg_id) |> 
   summarise() |>  
   st_convex_hull() |> 
@@ -145,15 +162,15 @@ depl_1_q95 <- locs |>
   group_by(deployment) |> 
   filter(deployment == "9919379_20211") |> 
   filter(in_range == TRUE) |> 
-  mutate(Migration = stepMean30 > quantile(stepMean30, probs = .95)) %>% 
-  mutate(seg_id = rle_id(Migration)) |> 
+  mutate(Moving = stepMean30 > quantile(stepMean30, probs = .95)) %>% 
+  mutate(seg_id = rle_id(Moving)) |> 
   mutate(year = year(t)) |> 
-  select(loc_nr, id, x, y, t, year, stepMean30, in_range, seg_id, Migration) |> 
+  select(loc_nr, id, x, y, t, year, stepMean30, in_range, seg_id, Moving) |> 
   ungroup()
 
 # calculate convex hull
 ch_depl_1_q95 <- depl_1_q95  |>  
-  filter(!Migration) |> 
+  filter(!Moving) |> 
   group_by(year, seg_id) |> 
   summarise() |>  
   st_convex_hull() |> 
@@ -161,16 +178,8 @@ ch_depl_1_q95 <- depl_1_q95  |>
 
 ```
 
-## Migrating vs. non-migrating individuals
+The female red deer with ID 20211 included data from the years 2019 to 2021 (Figure 3). As thresholds for the mean distances of the 30 days windows I calculated the 75 % quantile (`r as.integer(quantile(depl_1_q75$stepMean30, probs = .75))` m, A), the 90% (`r as.integer(quantile(depl_1_q90$stepMean30, probs = .9))` m, B) and the 95 % (`r as.integer(quantile(depl_1_q95$stepMean30, probs = .95))` m, C). Based on the static segments I calculated convex hulls per year, i.e. seasonal home ranges of ID 20211.
 
-The calculation of mean steps in a window of 30 days for each location (location now - 15 days to now + 15 days) resulted in step mean thresholds of `r as.integer(quantile(depl_1_q75$stepMean30, probs = .75))` for a 75 % quantile, `r as.integer(quantile(depl_1_q90$stepMean30, probs = .9))` for a 90 % quantile and `r as.integer(quantile(depl_1_q95$stepMean30, probs = .95))` for a 95 % quantile and .
-
-Vorteile:
-- Start nicht abhängig von einem gesetzten Starttermin (!= Ursula: 1. März)
-
-Nachteile:
-- Verlust der ersten und letzten 15 Tage
-- Viele Segmente (!= Ursula)
 
 ```{r, plot_vars, include=FALSE}
 
@@ -178,45 +187,41 @@ Nachteile:
 p_q75 <- depl_1_q75 %>% 
   ggplot(aes(x, y)) + 
   geom_path() +
-  geom_point(aes(x, y, pch = Migration), size = 1.5) +
+  geom_point(aes(x, y, pch = Moving), size = 2) +
   facet_wrap(~ year)  + 
   geom_sf(data = ch_depl_1_q75, fill = "red", alpha = .4, inherit.aes = FALSE) +
   coord_sf(datum = sf::st_crs(2056)) +
   xlab("East (LV95)") +
   ylab("North (LV95)") +
-  ggtitle("Migrating and static segments with a 75 % quantile threshold of step means")
-p_q75
+  ggtitle("Moving and static segments with a 75 % quantile threshold")
 
 # plot quantile 90 %
 p_q90 <- depl_1_q90 %>% 
   ggplot(aes(x, y)) + 
   geom_path() +
-  geom_point(aes(x, y, shape = Migration), size = 1.5) +
+  geom_point(aes(x, y, shape = Moving), size = 2) +
   facet_wrap(~ year)  + 
   geom_sf(data = ch_depl_1_q90, fill = "red", alpha = .4, inherit.aes = FALSE) +
   coord_sf(datum = sf::st_crs(2056)) +
   xlab("East (LV95)") +
   ylab("North (LV95)") +
-  ggtitle("Migrating and static segments with a 90 % quantile threshold of step means")
-p_q90
+  ggtitle("Moving and static segments with a 90 % quantile threshold")
 
 # plot quantile 95 %
 p_q95 <- depl_1_q95 %>% 
   ggplot(aes(x, y)) + 
   geom_path() +
-  geom_point(aes(x, y, pch = Migration), size = 1.5) +
+  geom_point(aes(x, y, pch = Moving), size = 2) +
   facet_wrap(~ year)  + 
   geom_sf(data = ch_depl_1_q95, fill = "red", alpha = .4, inherit.aes = FALSE) +
   coord_sf(datum = sf::st_crs(2056)) +
   xlab("East (LV95)") +
   ylab("North (LV95)") +
-  ggtitle("Migrating and static segments with a 95 % quantile threshold of step means")
-p_q95
+  ggtitle("Moving and static segments with a 95 % quantile threshold")
 
 ```
 
-
-```{r, fig-plot1, warning=FALSE, echo=FALSE, fig.cap="*Classification of yearly trajectories into migrating and static segments with quantile thresholds of step means of 75 % (A), 90 % (B) and 95 % (C).*", fig.height = 18, fig.width = 14}
+```{r, fig-plot3, warning=FALSE, echo=FALSE, fig.cap="*Classification of yearly trajectories into moving and static segments with quantile thresholds of 75 % (A), 90 % (B) and 95 % (C).*", fig.height = 18, fig.width = 14}
 
 # plot 3 variants
 plot1 <- p_q75 / p_q90 / p_q95
@@ -227,8 +232,11 @@ plot1 +
 
 ```
 
+#### Extraction of Seasonal Migration Segments
 
-```{r, fig-plot2, warning=FALSE, echo=FALSE, fig.cap="*Yearly migrating and static segments of the trajectories with a quantile thresholds of step means of 95%.*", fig.height = 6, fig.width = 14}
+Merging and buffering the convex hulls of the static segments led to a winter and a summer home range in 2019 and 2020, and a winter home range only in 2021 (Figure 4).
+
+```{r, fig-plot4, warning=FALSE, echo=FALSE, fig.cap="*Yearly moving and static segments of the trajectories with quantile thresholds of 90%.*", fig.height = 6, fig.width = 14}
 
 # union overlaying c_hulls
 ch_union90 <- ch_depl_1_q90 |> 
@@ -244,8 +252,8 @@ for (y in unique(ch_union90$year)){
   # filter for years
   ch_year_temp <- ch_union90 |> 
     filter(year == y) |> 
-    st_cast("POLYGON") |> 
-    st_buffer(1000)
+    st_buffer(1000) |> 
+    st_cast("POLYGON")
 
   # append
   ch_year <- bind_rows(ch_year, ch_year_temp)
@@ -258,19 +266,22 @@ ch_year <-  ch_year |>
 plot2 <- depl_1_q90 %>% 
   ggplot(aes(x, y)) + 
   geom_path() +
-  geom_point(aes(x, y, pch = Migration), size = 1.5) +
+  geom_point(aes(x, y, pch = Moving), size = 2) +
   facet_wrap(~ year)  + 
   geom_sf(data = ch_year, fill = "red", alpha = .4, inherit.aes = FALSE) +
   coord_sf(datum = sf::st_crs(2056)) +
   xlab("East (LV95)") +
   ylab("North (LV95)") +
-  ggtitle("Unioned and buffered convex hulls with trajectory segments classified by migration state")
+  ggtitle("Yearly buffered convex hulls with trajectory segments classified by moving state")
 plot2
 
 ```
 
+The intersection of the seasonal home ranges with the locations led to segments only outside the home ranges. These include seasonal migration segments from summer to winter home ranges and vice versa, and excursions (Figure 5). As these excursion segments have the start and end location towards the same home range I removed them by using a threshold of 2000 m distance between the start and end locations of the segments (Figure 6).
 
-```{r, fig-plot3, warning=FALSE, echo=FALSE, fig.cap="*Yearly migration segments of the trajectories, but instead of only seasonal migrations, with excurions included.*", fig.height = 6, fig.width = 14}
+The resulting trajectory segments show the seasonal migrations in two of the tree years (Figure 6). In 2021 the migration from the winter to the summer home range had not yet started. Migration duration lasted only from 7 to 24 hours (Table 1).
+
+```{r, fig-plot5, warning=FALSE, echo=FALSE, fig.cap="*Yearly moving segments of the trajectories, with excursions included.*", fig.height = 6, fig.width = 14}
 
 # loop intersect locs with ch_year
 locs_ch_year <- NULL
@@ -299,11 +310,11 @@ for (j in unique(depl_1_q90$year)){
 locs_mig <- depl_1_q90 |> 
   filter(!loc_nr %in% locs_ch_year$loc_nr)
 
-# plot migration segments with ch_year
+# plot moving segments with ch_year
 plot3 <- locs_mig %>% 
   ggplot(aes(x, y)) + 
   geom_path(aes(colour = seg_id), linewidth = 1) +
-  geom_point(aes(x, y), size = 1.5) +
+  geom_point(aes(x, y), size = 2) +
   facet_wrap(~ year)  + 
   geom_sf(data = ch_year, fill = "red", alpha = .4, inherit.aes = FALSE) +
   coord_sf(datum = sf::st_crs(2056)) +
@@ -315,8 +326,9 @@ plot3
 ```
 
 
+
 ```{r, seg_mig, include=FALSE}
-# filter for migration segments
+# filter for moving segments
 locs_mig2 <- locs_mig |> 
   group_by(seg_id) |> 
   mutate(seg_start = min(t),
@@ -349,30 +361,31 @@ for (s in unique(locs_mig2$seg_id)){
   }
 
 
-# remove distances from start to end < 2000 m to get only the migration segments
-seg_mig_temp <- seg_dist |> 
+# remove distances from start to end < 2000 m to get only the moving segments
+seg_mig_df <- seg_dist |> 
   filter(start_end_dist > 2000) |> 
-  dplyr::select(id, year, seg_id, seg_start, seg_end, start_end_dist) |> 
+  dplyr::select(id, year, seg_id, seg_start, seg_end) |> 
   sf_to_df(fill = TRUE) |> 
-  dplyr::select(-c(sfg_id, point_id, x, y)) 
+  dplyr::select(-c(sfg_id, point_id, x, y)) |> 
+  mutate(duration = round(difftime(seg_end, seg_start, units = "hours"), 1))
   
 # join attributes to the final migration segments
 seg_mig <- locs_mig |> 
-  filter(seg_id %in% seg_mig_temp$seg_id) |> 
-  left_join(seg_mig_temp, by = c("id", "year", "seg_id")) |> 
+  filter(seg_id %in% seg_mig_df$seg_id) |> 
+  left_join(seg_mig_df, by = c("id", "year", "seg_id")) |> 
   rename(Segment = seg_id) |> 
   mutate(Season = case_when(month(seg_start) < 7 ~ "Spring",
                             TRUE ~ "Autumn"))
   
 ```
 
-```{r, fig-plot4, warning=FALSE, echo=FALSE, fig.cap="*Yearly seasonal migrations and home ranges, without excursions.*", fig.height = 6, fig.width = 14}
+```{r, fig-plot6, warning=FALSE, echo=FALSE, fig.cap="*Yearly seasonal migrations and home ranges, without excursions for ID 20211.*", fig.height = 6, fig.width = 14}
 
 # plot migration segments with ch_year
 plot4 <- seg_mig %>% 
   ggplot(aes(x, y)) + 
   geom_path(aes(colour = Season), linewidth = 1) +
-  geom_point(aes(x, y), size = 1.5) +
+  geom_point(aes(x, y), size = 2) +
   facet_wrap(~ year)  + 
   geom_sf(data = ch_year, fill = "red", alpha = .4, inherit.aes = FALSE) +
   coord_sf(datum = sf::st_crs(2056)) +
@@ -383,3 +396,422 @@ plot4
 
 ```
 
+
+
+```{r, table1, echo=FALSE}
+knitr::kable(seg_mig_df,
+             align = "cccccr",
+             caption = "Table 1. Seasonal migration results of ID 20211 with start and end date, and the duration.",
+             format = "pipe"
+             )
+```
+
+
+
+#### Test with a Second Individual
+
+For a second individual (ID 20215) the algorithm also delivered a winter and a summer home range in 2019 and 2020, and a winter home range only in 2021. In contrast to ID 20211 with only very short migrations these lasted from 1 hour to 12 days (Figure 7; Table 2). In 2021 a segment remained which was neither a seasonal migration nor an excursion.
+
+```{r, vars2, include=FALSE}
+# test with a second individual
+# select 1 example individual (deployment) and set threshold of the step mean of 30 days to 75 % quantile
+depl_1_q75_20215 <- locs |>  
+  group_by(deployment) |> 
+  filter(deployment == "9916965_20215") |> 
+  filter(in_range == TRUE) |> 
+  mutate(Moving = stepMean30 > quantile(stepMean30, probs = .75)) %>% 
+  mutate(seg_id = rle_id(Moving)) |> 
+  mutate(year = year(t)) |> 
+  select(loc_nr, id, x, y, t, year, stepMean30, in_range, seg_id, Moving) |> 
+  ungroup()
+
+# calculate convex hull of 75 % quantile
+ch_depl_1_q75_20215 <- depl_1_q75_20215  |>  
+  filter(!Moving) |> 
+  group_by(year, seg_id) |> 
+  summarise() |>  
+  st_convex_hull() |> 
+  ungroup()
+
+
+# select 1 example individual (deployment) and set threshold of the step mean of 30 days to 90 % quantile
+depl_1_q90_20215 <- locs |>  
+  group_by(deployment) |> 
+  filter(deployment == "9916965_20215") |> 
+  filter(in_range == TRUE) |> 
+  mutate(Moving = stepMean30 > quantile(stepMean30, probs = .9)) %>% 
+  mutate(seg_id = rle_id(Moving)) |> 
+  mutate(year = year(t)) |> 
+  select(loc_nr, id, x, y, t, year, stepMean30, in_range, seg_id, Moving) |> 
+  ungroup()
+
+# calculate convex hull
+ch_depl_1_q90_20215 <- depl_1_q90_20215  |>  
+  filter(!Moving) |> 
+  group_by(year, seg_id) |> 
+  summarise() |>  
+  st_convex_hull() |> 
+  ungroup()
+
+
+# select 1 example individual (deployment) and set threshold of the step mean of 30 days to 95 % quantile
+depl_1_q95_20215 <- locs |>  
+  group_by(deployment) |> 
+  filter(deployment == "9916965_20215") |> 
+  filter(in_range == TRUE) |> 
+  mutate(Moving = stepMean30 > quantile(stepMean30, probs = .95)) %>% 
+  mutate(seg_id = rle_id(Moving)) |> 
+  mutate(year = year(t)) |> 
+  select(loc_nr, id, x, y, t, year, stepMean30, in_range, seg_id, Moving) |> 
+  ungroup()
+
+# calculate convex hull
+ch_depl_1_q95_20215 <- depl_1_q95_20215  |>  
+  filter(!Moving) |> 
+  group_by(year, seg_id) |> 
+  summarise() |>  
+  st_convex_hull() |> 
+  ungroup()
+
+```
+
+```{r, plot_vars2, include=FALSE}
+
+# plot quantile 75 %
+p_q75_20215 <- depl_1_q75_20215 %>% 
+  ggplot(aes(x, y)) + 
+  geom_path() +
+  geom_point(aes(x, y, pch = Moving), size = 2) +
+  facet_wrap(~ year)  + 
+  geom_sf(data = ch_depl_1_q75_20215, fill = "red", alpha = .4, inherit.aes = FALSE) +
+  coord_sf(datum = sf::st_crs(2056)) +
+  xlab("East (LV95)") +
+  ylab("North (LV95)") +
+  ggtitle("Migrating and static segments with a 75 % quantile threshold")
+
+# plot quantile 90 %
+p_q90_20215 <- depl_1_q90_20215 %>% 
+  ggplot(aes(x, y)) + 
+  geom_path() +
+  geom_point(aes(x, y, shape = Moving), size = 2) +
+  facet_wrap(~ year)  + 
+  geom_sf(data = ch_depl_1_q90_20215, fill = "red", alpha = .4, inherit.aes = FALSE) +
+  coord_sf(datum = sf::st_crs(2056)) +
+  xlab("East (LV95)") +
+  ylab("North (LV95)") +
+  ggtitle("Migrating and static segments with a 90 % quantile threshold")
+
+# plot quantile 95 %
+p_q95_20215 <- depl_1_q95_20215 %>% 
+  ggplot(aes(x, y)) + 
+  geom_path() +
+  geom_point(aes(x, y, pch = Moving), size = 2) +
+  facet_wrap(~ year)  + 
+  geom_sf(data = ch_depl_1_q95_20215, fill = "red", alpha = .4, inherit.aes = FALSE) +
+  coord_sf(datum = sf::st_crs(2056)) +
+  xlab("East (LV95)") +
+  ylab("North (LV95)") +
+  ggtitle("Migrating and static segments with a 95 % quantile threshold")
+
+```
+
+```{r, include=FALSE}
+
+# plot 3 variants
+plot1_20215 <- p_q75_20215 / p_q90_20215 / p_q95_20215
+plot1_20215 + 
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "A") &
+  theme(plot.tag = element_text(size = 12))
+
+```
+
+```{r, include=FALSE}
+
+# union overlaying c_hulls
+ch_union90_20215 <- ch_depl_1_q90_20215 |> 
+  group_by(year) |>
+  summarize(geometry = st_union(geometry)) |> 
+  ungroup()
+
+# loop through multipolygons to create spatially independent polygons and buffer
+ch_year_20215 <- NULL
+
+for (y in unique(ch_union90_20215$year)){
+  
+  # filter for years
+  ch_year_temp_20215 <- ch_union90_20215 |> 
+    filter(year == y) |> 
+    st_buffer(1000) |> 
+    st_cast("POLYGON")
+
+  # append
+  ch_year_20215 <- bind_rows(ch_year_20215, ch_year_temp_20215)
+}
+
+ch_year_20215 <-  ch_year_20215 |> 
+  mutate(ch_id = row_number())
+
+# plot 90 % quantile with 1000 m buffer per year
+plot2_20215 <- depl_1_q90_20215 %>% 
+  ggplot(aes(x, y)) + 
+  geom_path() +
+  geom_point(aes(x, y, pch = Moving), size = 2) +
+  facet_wrap(~ year)  + 
+  geom_sf(data = ch_year_20215, fill = "red", alpha = .4, inherit.aes = FALSE) +
+  coord_sf(datum = sf::st_crs(2056)) +
+  xlab("East (LV95)") +
+  ylab("North (LV95)") +
+  ggtitle("Yearly buffered convex hulls with trajectory segments classified by moving state")
+plot2_20215
+
+```
+
+```{r, include=FALSE}
+
+# loop intersect locs with ch_year
+locs_ch_year_20215 <- NULL
+
+for (j in unique(depl_1_q90_20215$year)){
+
+  # filter locs by year
+  # j<-2019; i<-2
+  depl_1_q90_temp_20215 <- depl_1_q90_20215 |> 
+    filter(year == j)
+  
+  for (i in unique(ch_year_20215$ch_id)){
+    
+    # filter ch_year by id and year
+    loc_ch_year_temp_20215 <- ch_year_20215 %>%
+      filter(year == j) |>
+      filter(ch_id == i) |> 
+      st_intersection(depl_1_q90_temp_20215)
+
+    # append
+    locs_ch_year_20215 <- bind_rows(locs_ch_year_20215, loc_ch_year_temp_20215)
+  }
+}
+
+# remove locs inside ch_year to get locs of mig
+locs_mig_20215 <- depl_1_q90_20215 |> 
+  filter(!loc_nr %in% locs_ch_year_20215$loc_nr)
+
+# plot moving segments with ch_year
+plot3_20215 <- locs_mig_20215 %>% 
+  ggplot(aes(x, y)) + 
+  geom_path(aes(colour = seg_id), linewidth = 1) +
+  geom_point(aes(x, y), size = 2) +
+  facet_wrap(~ year)  + 
+  geom_sf(data = ch_year_20215, fill = "red", alpha = .4, inherit.aes = FALSE) +
+  coord_sf(datum = sf::st_crs(2056)) +
+  xlab("East (LV95)") +
+  ylab("North (LV95)") +
+  ggtitle("Trajectory segments and the seasonal home ranges")
+plot3_20215
+
+```
+
+```{r, seg_mig2, include=FALSE}
+# filter for moving segments
+locs_mig2_20215 <- locs_mig_20215 |> 
+  group_by(seg_id) |> 
+  mutate(seg_start = min(t),
+         seg_end = max(t)) |> 
+  filter(t %in% c(seg_start, seg_end)) |> 
+  mutate(n_seg = n()) |> 
+  filter(n_seg > 1) |> 
+  ungroup()
+
+# calculate distance between start and end location of the segment
+seg_dist_20215 <- NULL
+
+for (s in unique(locs_mig2_20215$seg_id)){
+    
+    # filter for data of current loop run
+    seg_start_20215 <- locs_mig2_20215 |> 
+      filter(seg_id == s) |> 
+      filter(t == seg_start)
+    
+    seg_end_20215 <- locs_mig2_20215 |> 
+      filter(seg_id == s) |> 
+      filter(t == seg_end) 
+    
+    # calculate and append distance from start to end in segment
+    seg_start_20215$start_end_dist <- st_distance(seg_start_20215, seg_end_20215) |>  as.numeric()
+
+    # append
+    seg_dist_20215 <- bind_rows(seg_dist_20215, seg_start_20215)
+    
+  }
+
+
+# remove distances from start to end < 2000 m to get only the moving segments
+seg_mig_df_20215 <- seg_dist_20215 |> 
+  filter(start_end_dist > 2000) |> 
+  dplyr::select(id, year, seg_id, seg_start, seg_end) |> 
+  sf_to_df(fill = TRUE) |> 
+  dplyr::select(-c(sfg_id, point_id, x, y)) |> 
+  mutate(duration = round(difftime(seg_end, seg_start, units = "hours"), 1))
+  
+# join attributes to the final migration segments
+seg_mig_20215 <- locs_mig_20215 |> 
+  filter(seg_id %in% seg_mig_df_20215$seg_id) |> 
+  left_join(seg_mig_df_20215, by = c("id", "year", "seg_id")) |> 
+  rename(Segment = seg_id) |> 
+  mutate(Season = case_when(month(seg_start) < 7 ~ "Spring",
+                            TRUE ~ "Autumn"))
+  
+```
+
+
+```{r, fig-plot7, warning=FALSE, echo=FALSE, fig.cap="*Yearly seasonal migrations and home ranges, without excursions for ID 20215.*", fig.height = 6, fig.width = 14}
+
+# plot migration segments with ch_year for id 20215
+plot4_20215 <- seg_mig_20215 %>% 
+  ggplot(aes(x, y)) + 
+  geom_path(aes(colour = Season), linewidth = 1) +
+  geom_point(aes(x, y), size = 2) +
+  facet_wrap(~ year)  + 
+  geom_sf(data = ch_year_20215, fill = "red", alpha = .4, inherit.aes = FALSE) +
+  coord_sf(datum = sf::st_crs(2056)) +
+  xlab("East (LV95)") +
+  ylab("North (LV95)") +
+  ggtitle("Seasonal migrations")
+plot4_20215
+
+```
+
+```{r table2, echo=FALSE}
+knitr::kable(seg_mig_df_20215,
+             align = "cccccr",
+             caption = "Table 2. Seasonal migration results of ID 20215 with start and end date, and the duration.",
+             format = "pipe"
+             )
+```
+
+
+
+### Comparison to the Results of the "MigrO Method"
+
+The "MigrO Method" defined polygons of residency with a start and end date (Table 3). Thus, migration data were the locations between these home ranges. ID 20211 had 6 home ranges, what means that there were 3 seasonal migrations between. The migration dates from my algorithm in 2019 exactly fitted the ones of the "MigrO Method" (2019-10-10 to 2019-10-11). In 2020 they differed in one day in spring (start on 2020-05-06 vs. 2020-05-05) and in autumn (start on 2020-09-25 vs. 2020-09-24). ID 20215 had also 6 home ranges in the "MigrO Method". In 2019 the migration dates again perfectly fitted the ones of the "MigrO Method" (2019-10-07 to 2019-10-08), although the end date there was only on 2019-10-09. In 2020 in spring the start date differed in seven days (2020-04-26 vs. 2020-05-03), and the end date in tree days (2020-05-04 vs. 2020-05-07). In autumn the dates exactly fitted again (2020-09-26). In spring 2021 there finally was a difference of one day in start (2021-05-08 vs. 2021-05-07).
+
+```{r table3, echo=FALSE}
+# load data of all individuals as sf
+migro <- fread(here("tables", "tab_migro.csv"))
+
+knitr::kable(migro,
+             align = "cccccr",
+             caption = "Table 3. Seasonal home ranges of ID 20211 and ID 20215 resulting from MigrO Method.",
+             format = "pipe"
+             )
+```
+
+## Discussion
+
+The algorithm delivered reliable results of seasonal migrations for these two example individuals. Start and end dates were named precisely to the hour. As expected migration duration was usually short. Another advantage is that it detects resident behaviour too, i.e. only overlapping home ranges. However, the application of this algorithm on other individuals could be challenging, as the settings were taken regarding an optimized performance for ID 20211. This individual showed distinct seasonal migrations. The mean distance thresholds to classify moving and static trajectory segments I set by only visual assessment, and also the buffer around the convex hulls. For individuals with less distinct migration behaviour the results might be therefore less precise. For example, in spring some individuals attempt to reach their summer home range, but return after a while, probably because there was still too much snow. If such an individual finally succeeds a long migration duration would result, as the algorithm does not detect and cut these excursions. The "MigrO method" does, but its disadvantage is the setting of the 1st March as the yearly start date.
+
+Further disadvantages of my algorithm are that the first and the last 15 days of the trajectory are cut and that dispersing behaviour in the end of the trajectory is not detected. In addition, cutting the migration segments with the home ranges results in loosing the real start and end location of the migration. In case a migration segment only consists of two locations and both are inside the home ranges, that migration would be removed. It is therefore necessary to add them again. This would then also enable pattern detection like hopping from one protected area to another. Thus, further development of the algorithm is needed.
+
+
+## Acknowledgement
+
+I would like to thank Patrick Laube for including me in the course and giving me such exciting content regarding Computational Movement analysis. A special thank I address to Nils Ratnaweera for the great support during the classes and for this analysis.
+
+## References
+
+::: {#refs}
+:::
+
+## Appendix
+
+```{r, preprocessing, eval=FALSE}
+
+# preprocessing to calculate distances between locations in a temporal window
+log_file <- "Q:/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/code/movement/migration/data_work/logfile15.txt"
+log_conn <- file(log_file, open = "wt")
+
+sink(log_conn,append = TRUE,type = "message")
+
+library(tidyverse)
+library(data.table)
+library(sf)
+library(lubridate)
+
+
+# load df as sf
+locs_win <- fread("Q:/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/code/movement/migration/origdata/locs_win.csv") %>% 
+  st_as_sf(coords = c("x", "y"), crs = 2056, remove = FALSE)
+
+# define window of t +/- 15 days an run through sf (+/- 4 minutes)
+locs_win <- locs %>% 
+  mutate(t_min15 = t - 15*24*3600 - 240,
+         t_plus15 = t + 15*24*3600 + 240,
+         deployment = as.factor(deployment), 
+         dep_num = as.numeric(deployment)) %>% 
+  select(loc_nr, deployment, dep_num, t, t_min15, t_plus15, x, y)
+
+
+## find moving and static phases in trajectories
+
+# use cma_movement.bat to run code parallel with 40 cores
+
+# number of tile each session calculates
+arg <- commandArgs(trailingOnly = FALSE) # command line argument
+k <- as.numeric(arg[6])
+k
+
+n.parallel <- split(seq(1:length(unique(locs_win$dep_num))), sort(seq(1:length(unique(locs_win$dep_num))) %% 40))
+
+locs_win <- locs_win %>% filter(dep_num %in% n.parallel[[k]])
+
+
+# create output table
+output <- data.frame(loc_nr = numeric(),
+                     deployment = logical(),
+                     dep_nr = numeric(),
+                     t = POSIXct(),
+                     t_min15 = POSIXct(),
+                     t_plus15 = POSIXct(),
+                     x = numeric(),
+                     y = numeric(),
+                     in_range = logical(),
+                     stepMean30 = numeric())
+
+
+
+# loop through deployments and locations
+for (d in unique(locs_win$dep_num)){
+  
+  locs_win_filter <- locs_win %>%
+    filter(dep_num == d) %>%
+    mutate(t_range = interval(min(t), max(t)),
+           in_range = case_when(t_min15 %within% t_range &
+                                  t_plus15 %within% t_range ~ TRUE,
+                                TRUE ~ FALSE)) %>%
+  dplyr::select(-t_range)
+  
+  
+  for (l in 1:nrow(locs_win_filter)){
+    
+    # filter for data of current loop run
+    now <- locs_win_filter[l,]
+    
+    obs_win <-  locs_win_filter %>% 
+      filter(t >= as.POSIXct(now$t_min15, tz = "UTC"),
+             t <= as.POSIXct(now$t_plus15, tz = "UTC")) 
+    
+    # calculate and append stepMean30 to now
+    now$stepMean30 <- st_distance(obs_win, now) %>% as.numeric() %>% mean()
+    
+    # append now to output
+    output <- rbind(output, now)
+    
+  }
+}
+
+fwrite(output, paste0("Q:/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/code/movement/migration/data_work/win15/output_", k,".csv"))
+
+sink()
+close(log_conn)
+
+```
