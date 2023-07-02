@@ -7,8 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Thomas Rempfler">
+<meta name="dcterms.date" content="2023-07-02">
 
-<title>Red Deer Trajectories - A method for Segmentation into Seasonal Homeranges</title>
+<title>A Method to detect Seasonal Migration Patterns in Red Deer Data</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,6 +21,88 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1.6em;
   vertical-align: middle;
+}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
 }
 </style>
 
@@ -46,7 +129,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Red Deer Trajectories - A method for Segmentation into Seasonal Homeranges</h1>
+<h1 class="title">A Method to detect Seasonal Migration Patterns in Red Deer Data</h1>
 </div>
 
 
@@ -60,6 +143,12 @@ ul.task-list li input[type="checkbox"] {
           </div>
   </div>
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">July 2, 2023</p>
+    </div>
+  </div>
   
     
   </div>
@@ -67,80 +156,507 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<section id="report-should" class="level2">
-<h2 class="anchored" data-anchor-id="report-should">Report should:</h2>
+<section id="background-and-research-goals" class="level2">
+<h2 class="anchored" data-anchor-id="background-and-research-goals">Background and Research Goals</h2>
+<p>Ungulates use their habitats heterogeneously, prefer and avoid certain habitat parameters and adapt their behaviour to circumstances <span class="citation" data-cites="Allen2014">(<a href="#ref-Allen2014" role="doc-biblioref">Allen et al. 2014</a>)</span>. The existence of red deer (<em>Cervus elaphus</em>) is affected by feeding, reproduction and the avoidance of predators <span class="citation" data-cites="Clutton-Brock1982">(<a href="#ref-Clutton-Brock1982" role="doc-biblioref">Clutton-Brock et al. 1982</a>)</span>. The concept of the «landscape of fear» represents relative levels of predation risk as peaks and valleys that reflect the level of fear of predation a prey animal experiences in different parts of its home range <span class="citation" data-cites="Laundre2010">(<a href="#ref-Laundre2010" role="doc-biblioref">Laundré et al. 2010</a>)</span>. Canadian studies on elk (<em>Cervus elaphus canadensis</em>) have shown that in human-dominated landscapes, effects on red deer behaviour caused by human disturbance exceed those of habitat and natural predators <span class="citation" data-cites="Ciuti2012">(<a href="#ref-Ciuti2012" role="doc-biblioref">Ciuti et al. 2012</a>)</span>. A comparison of red deer behaviour in America and Europe led to the conclusion that human activity is identified as the strongest driver of red deer movement <span class="citation" data-cites="Mumme2023">(<a href="#ref-Mumme2023" role="doc-biblioref">Mumme et al. 2023</a>)</span>.</p>
+<p>Red deer populations in highly seasonal environments show partial migration, meaning that there are migratory and resident individuals in one population, but the proportion can vary between populations <span class="citation" data-cites="Mysterud2011">(<a href="#ref-Mysterud2011" role="doc-biblioref">Mysterud et al. 2011</a>)</span>. Their preferences for habitat parameters in rugged mountain areas are associated with forage quality <span class="citation" data-cites="Zweifel-Schielly2009">(<a href="#ref-Zweifel-Schielly2009" role="doc-biblioref">Zweifel-Schielly et al. 2009</a>)</span> and high biomass <span class="citation" data-cites="Schweiger2015 Zweifel-Schielly2012">(<a href="#ref-Zweifel-Schielly2012" role="doc-biblioref">Zweifel-Schielly et al. 2012</a>, <a href="#ref-Schweiger2015" role="doc-biblioref">Schweiger et al. 2015</a>)</span>. During the green-up season migratory individuals have access to higher quality forage than resident. Thus, habitat selection of red deer in montane to alpine habitats depends on human presence, landscape characteristics, the stage of vegetation phenology (green-up), and the migrant strategy <span class="citation" data-cites="Sigrist2022">(<a href="#ref-Sigrist2022" role="doc-biblioref">Sigrist et al. 2022</a>)</span>.</p>
+<p>Understanding the behaviour of ungulates is highly related with the knowledge about their movement. Despite the fact that migration is a well-known and widespread ecological phenomenon, there is still no consensus on how to describe and define it <span class="citation" data-cites="Cagnacci2011 Dingle2007">(<a href="#ref-Dingle2007" role="doc-biblioref">Dingle and Alistair Drake 2007</a>, <a href="#ref-Cagnacci2011" role="doc-biblioref">Cagnacci et al. 2011</a>)</span>. Many methods have in common that they tackle the movement ecology paradigm of organismal movement <span class="citation" data-cites="Nathan2008">(<a href="#ref-Nathan2008" role="doc-biblioref">Nathan et al. 2008</a>)</span> regarding their specific questions: The internal state (why move?), motion (how to move?), and navigation (when and where to move?).</p>
+<p>Methods to analyse movement often start with separating migrating from non-migrating individuals. Trajectories, i.e.&nbsp;the spatiotemporal footprint of a moving and tracked object <span class="citation" data-cites="Laube2017">(<a href="#ref-Laube2017" role="doc-biblioref">Laube 2017</a>)</span>, are split into moving and static segments. We are interested in red deer, whether they seasonally migrate and if so, when and where. Thus, we applied a method using the QGIS plug-in “MigrO” to detect segments of minimum 30 days residency, i.e.&nbsp;home ranges <span class="citation" data-cites="Fellmann2022">(<a href="#ref-Fellmann2022" role="doc-biblioref">Fellmann 2022</a>)</span>. Concluding from these home ranges and the timestamp entering and leaving them we detected static and moving segments of the trajectories. We got good results, but the method had its disadvantages. First, we had to set a start date for the algorithm. We took the 1st of March, as we expected red deer at that time still to stay in their winter habitats. Due to these settings we lost static segments in the transition from February to March. A second disadvantage was the need of much handwork, as some attributes had to be added manually, e.g.&nbsp;the classification into migrant and non-migrant individuals. Thus, in this exercise I want to develop another method to describe red deer migrations and answer the main research questions:</p>
 <ol type="1">
-<li>be written in a scientific writing style.</li>
-<li>around 15’000 characters, not exceed 20’000 (including spaces)</li>
-<li>typically include text, maps, plots, appendices, code and references.</li>
-<li>written using Quarto (see sample File in the template Repo)</li>
+<li><p>How to find start and end dates in red deer trajectories, and how long do they last?</p></li>
+<li><p>How do these results perform compared to the “MigrO method”?</p></li>
 </ol>
-<!-- ```{r setup, include=FALSE} -->
-<!-- knitr::opts_chunk$set(echo = TRUE) -->
-<!-- ``` -->
 </section>
-<section id="background" class="level1">
-<h1>Background</h1>
-<p>The existence of red deer (Cervus elaphus) is affected by feeding, reproduction and the avoidance of predators (Clutton-Brock, Guinness and Albon, 1982). The concept of the «landscape of fear» represents relative levels of predation risk as peaks and valleys that reflect the level of fear of predation a prey animal experiences in different parts of its home range (Laundré, Hernández and Ripple, 2010). Canadian studies on elk (Cervus elaphus canadensis) have shown that in human-dominated landscapes, effects on red deer behaviour caused by human disturbance exceed those of habitat and natural predators (Ciuti et al., 2012). Humans triggered increased vigilance and decreased foraging in elk. Human activity is identified as the strongest driver of red deer movement (Mumme et al., 2023). They highly respond to disturbance from human recreational activities by increasing their level of vigilance, but the nature of their response varies with the level of cover available, and they perceive hunting as a more acute threat than human recreation (Jayakody et al., 2008). Even red deer which appear to be habituated to regular disturbance within their home territory may alter their behaviour and avoid hiking trails (Sibbald et al., 2011). As human activity is mainly concentrated on daytime, red deer can alter their diurnal behaviour, avoid humans during the day and compensate with activity at night (Godvik et al., 2009; Coppes et al., 2017). Red deer populations in highly seasonal environments show partial migration, meaning that there are migratory and resident individuals in one population, but the proportion can vary between populations (Mysterud et al., 2011). Habitat selection of red deer in montane to alpine habitats depends on the stage of green-up, the migrant strategy, landscape characteristics and human presence (Sigrist et al., 2022). During the green-up season migratory individuals have access to higher quality forage than resident. In addition, red deer prefer flat terrain, lower elevation and higher solar radiation, but avoid habitats with possible exposure to human activity, i.e.&nbsp;small distance to roads and trails, great distance to forest or light shrub cover. The onset of hunting triggers stronger fear reactions in red deer, i.e.&nbsp;increased flight initiation distance, increased time spent outside the home range and preference for dense resting sites, what may affect red deer distribution and harvesting efficiency (Meisingset et al., 2022). To protect red deer from hunting and from human disturbance authorities and managers in the Alps designate different types of hunting ban areas (HBA), while the evidence of their effect on red deer behaviour and habitat selection is lacking. However, the arrangement of multiple HBA’s per study area offers an experimental study design to compare habitat selection inside versus outside HBA.</p>
-<p>Fellmann… Even though there have been developed several methods to classify migration behaviour of red deer I want to test a self developed method.</p>
-</section>
-<section id="methods" class="level1">
-<h1>Methods</h1>
-<p>We have GPS locations of red deer in six study areas (fig.&nbsp;1). For the development of the method I concentrated on only 1 individual. The next step would be to apply the method to many individuals.</p>
-<section id="data-description" class="level2">
-<h2 class="anchored" data-anchor-id="data-description">Data description</h2>
-<section id="static-and-moving-phases-of-trajectories" class="level3">
-<h3 class="anchored" data-anchor-id="static-and-moving-phases-of-trajectories">Static and moving phases of trajectories</h3>
-<p>With the calculation of mean steps in a window of 30 days, at the beginning and in the end of the individual trajectories incomplete steps were generated which I have removed.</p>
-<p>Diskussion: - Problem year, weil dann neues mcp im Übergang zum Jahreswechsel - mcp merge</p>
-</section>
-</section>
-<section id="migrating-vs.-non-migrating-individuals" class="level2">
-<h2 class="anchored" data-anchor-id="migrating-vs.-non-migrating-individuals">Migrating vs.&nbsp;non-migrating individuals</h2>
-<p>The calculation of mean steps in a window of 30 days for each location (location now - 15 days to now + 15 days) resulted in step mean thresholds of 953 for a 75 % quantile, 2904 for a 90 % quantile and 4747 for a 95 % quantile and .</p>
-<p>Vorteile: - Start nicht abhängig von einem gesetzten Starttermin (!= Ursula: 1. März)</p>
-<p>Nachteile: - Verlust der ersten und letzten 15 Tage - Viele Segmente (!= Ursula)</p>
+<section id="methods" class="level2">
+<h2 class="anchored" data-anchor-id="methods">Methods</h2>
+<p>Note: I preprocessed a dataset of 322 red deer individuals. For the further steps I then concentrated on only one individual and developed the algorithm. Finally, I applied the algorithm to another example individual to test its performance. The goal is to process all individuals in a future next step.</p>
+<section id="data-description" class="level3">
+<h3 class="anchored" data-anchor-id="data-description">Data Description</h3>
+<p>I used data from six telemetry studies across the Alps, i.e.&nbsp;from western Austria, northern Italy, Liechtenstein, as well as eastern and southern Switzerland (Figure 1). They cover montane to alpine habitats of red deer in a) inner alpine valleys of the east (studies RSN and ING, Swiss National Park with its surrounding areas in the canton of Grisons, Tyrol, the Autonomous province of Bolzano – South Tyrol and the province of Sondrio), and b) of the west (study VAL in the canton of Valais and the province Verbano – Cusio – Ossola), in c) the Swiss northeastern Pre-Alps and Alps (study ASG in the cantons of Appenzell Inner-Rhodes, Appenzell Outer-Rhodes and St.&nbsp;Gallen and study RAE with Liechtenstein, Vorarlberg and the canton of Grisons), and in d) the alpine south (study TIG in the cantons of Grisons and Ticino and provinces of Como, Lecco and Sondrio).</p>
 <div class="cell">
 <div class="cell-output-display">
 <div id="fig-plot1" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="index_files/figure-html/fig-plot1-1.png" class="img-fluid figure-img" width="1344"></p>
-<p></p><figcaption class="figure-caption"><em>Figure</em>&nbsp;1<em>.</em> <em>Classification of yearly trajectories into migrating and static segments with quantile thresholds of step means of 75 % (A), 90 % (B) and 95 % (C).</em></figcaption><p></p>
+<p><img src="images/fig1_gps_study_areas.png" class="img-fluid figure-img" width="827"></p>
+<p></p><figcaption class="figure-caption"><em>Figure</em>&nbsp;1<em>.</em> <em>Study areas with GPS locations.</em></figcaption><p></p>
 </figure>
 </div>
 </div>
 </div>
+</section>
+<section id="trajectory-segmentation" class="level3">
+<h3 class="anchored" data-anchor-id="trajectory-segmentation">Trajectory Segmentation</h3>
+<p>To identify static and moving segments of trajectories I followed an adapted four step processing <span class="citation" data-cites="Laube2011">(<a href="#ref-Laube2011" role="doc-biblioref">Laube and Purves 2011</a>)</span> (Figure 2).</p>
 <div class="cell">
 <div class="cell-output-display">
 <div id="fig-plot2" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="index_files/figure-html/fig-plot2-1.png" class="img-fluid figure-img" width="1344"></p>
-<p></p><figcaption class="figure-caption"><em>Figure</em>&nbsp;2<em>.</em> <em>Yearly migrating and static segments of the trajectories with a quantile thresholds of step means of 95%.</em></figcaption><p></p>
+<p><img src="images/laube_traj_seg.JPG" class="img-fluid figure-img" width="542"></p>
+<p></p><figcaption class="figure-caption"><em>Figure</em>&nbsp;2<em>.</em> <em>Scheme of trajectory segmentation.</em></figcaption><p></p>
 </figure>
 </div>
 </div>
 </div>
+<section id="preprocessing" class="level4">
+<h4 class="anchored" data-anchor-id="preprocessing">Preprocessing</h4>
+<ol type="a">
+<li>First, I defined a temporal window of +/- 15 days, according to the “MigrO method”, which defined segments of minimum 30 days residency as home ranges <span class="citation" data-cites="Fellmann2022">(<a href="#ref-Fellmann2022" role="doc-biblioref">Fellmann 2022</a>)</span> (Appendix).</li>
+<li>Second, I calculated the mean of all distances from one location within this 30 days window to every other location, grouped by individuals.</li>
+</ol>
+</section>
+<section id="static-and-moving-segments-of-trajectories" class="level4">
+<h4 class="anchored" data-anchor-id="static-and-moving-segments-of-trajectories">Static and Moving Segments of Trajectories</h4>
+<ol start="3" type="a">
+<li>From this third step on I continued with only one individual. Within the first 15 days and within the last 15 days of the individual trajectory mean distances were calculated on incomplete 30 days windows. Thus, I have removed them to prevent bias. To detect moving segments of the trajectory I then explored thresholds for the mean distances of the 30 days windows of 75 % quantile, 90 % and 95 %. Based on the static segments I calculated home ranges using the method of convex hull.</li>
+</ol>
+</section>
+<section id="extraction-of-seasonal-migration-segments" class="level4">
+<h4 class="anchored" data-anchor-id="extraction-of-seasonal-migration-segments">Extraction of Seasonal Migration Segments</h4>
+<ol start="4" type="a">
+<li>As the intermediate value the 90 % quantile threshold fitted best I merged all overlaying convex hulls per year and buffered with 1000 m, followed by an intersection with the locations. The remaining segments contain seasonal migration, i.e.&nbsp;migration between summer and winter home range, and excursions. The migrations I extracted finally by setting a threshold of greater than 2000 m for the distance between the start and end locations of the segments, because excursions might have their start and end location close by.</li>
+</ol>
+</section>
+</section>
+</section>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<section id="static-and-moving-segments-of-trajectories-1" class="level4">
+<h4 class="anchored" data-anchor-id="static-and-moving-segments-of-trajectories-1">Static and Moving Segments of Trajectories</h4>
+<p>The female red deer with ID 20211 included data from the years 2019 to 2021 (Figure 3). As thresholds for the mean distances of the 30 days windows I calculated the 75 % quantile (953 m, A), the 90% (2904 m, B) and the 95 % (4747 m, C). Based on the static segments I calculated convex hulls per year, i.e.&nbsp;seasonal home ranges of ID 20211.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div id="fig-plot3" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="index_files/figure-html/fig-plot3-1.png" class="img-fluid figure-img" width="1344"></p>
-<p></p><figcaption class="figure-caption"><em>Figure</em>&nbsp;3<em>.</em> <em>Yearly migration segments of the trajectories, but instead of only seasonal migrations, with excurions included.</em></figcaption><p></p>
+<p></p><figcaption class="figure-caption"><em>Figure</em>&nbsp;3<em>.</em> <em>Classification of yearly trajectories into moving and static segments with quantile thresholds of 75 % (A), 90 % (B) and 95 % (C).</em></figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="extraction-of-seasonal-migration-segments-1" class="level4">
+<h4 class="anchored" data-anchor-id="extraction-of-seasonal-migration-segments-1">Extraction of Seasonal Migration Segments</h4>
+<p>Merging and buffering the convex hulls of the static segments led to a winter and a summer home range in 2019 and 2020, and a winter home range only in 2021 (Figure 4).</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-plot4" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="index_files/figure-html/fig-plot4-1.png" class="img-fluid figure-img" width="1344"></p>
+<p></p><figcaption class="figure-caption"><em>Figure</em>&nbsp;4<em>.</em> <em>Yearly moving and static segments of the trajectories with quantile thresholds of 90%.</em></figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The intersection of the seasonal home ranges with the locations led to segments only outside the home ranges. These include seasonal migration segments from summer to winter home ranges and vice versa, and excursions (Figure 5). As these excursion segments have the start and end location towards the same home range I removed them by using a threshold of 2000 m distance between the start and end locations of the segments (Figure 6).</p>
+<p>The resulting trajectory segments show the seasonal migrations in two of the tree years (Figure 6). In 2021 the migration from the winter to the summer home range had not yet started. Migration duration lasted only from 7 to 24 hours (Table 1).</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-plot5" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="index_files/figure-html/fig-plot5-1.png" class="img-fluid figure-img" width="1344"></p>
+<p></p><figcaption class="figure-caption"><em>Figure</em>&nbsp;5<em>.</em> <em>Yearly moving segments of the trajectories, with excursions included.</em></figcaption><p></p>
 </figure>
 </div>
 </div>
 </div>
 <div class="cell">
 <div class="cell-output-display">
-<div id="fig-plot4" class="quarto-figure quarto-figure-center anchored">
+<div id="fig-plot6" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="index_files/figure-html/fig-plot4-1.png" class="img-fluid figure-img" width="1344"></p>
-<p></p><figcaption class="figure-caption"><em>Figure</em>&nbsp;4<em>.</em> <em>Yearly seasonal migrations and home ranges, without excursions.</em></figcaption><p></p>
+<p><img src="index_files/figure-html/fig-plot6-1.png" class="img-fluid figure-img" width="1344"></p>
+<p></p><figcaption class="figure-caption"><em>Figure</em>&nbsp;6<em>.</em> <em>Yearly seasonal migrations and home ranges, without excursions for ID 20211.</em></figcaption><p></p>
 </figure>
 </div>
 </div>
 </div>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped">
+<caption>Table 1. Seasonal migration results of ID 20211 with start and end date, and the duration.</caption>
+<colgroup>
+<col style="width: 9%">
+<col style="width: 8%">
+<col style="width: 11%">
+<col style="width: 29%">
+<col style="width: 29%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">id</th>
+<th style="text-align: center;">year</th>
+<th style="text-align: center;">seg_id</th>
+<th style="text-align: center;">seg_start</th>
+<th style="text-align: center;">seg_end</th>
+<th style="text-align: right;">duration</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">20211</td>
+<td style="text-align: center;">2019</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">2019-10-10 20:00:10</td>
+<td style="text-align: center;">2019-10-11 03:02:30</td>
+<td style="text-align: right;">7 hours</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">20211</td>
+<td style="text-align: center;">2020</td>
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">2020-05-06 02:00:40</td>
+<td style="text-align: center;">2020-05-07 02:00:11</td>
+<td style="text-align: right;">24 hours</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">20211</td>
+<td style="text-align: center;">2020</td>
+<td style="text-align: center;">16</td>
+<td style="text-align: center;">2020-09-25 13:00:10</td>
+<td style="text-align: center;">2020-09-26 04:03:00</td>
+<td style="text-align: right;">15 hours</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </section>
+<section id="test-with-a-second-individual" class="level4">
+<h4 class="anchored" data-anchor-id="test-with-a-second-individual">Test with a Second Individual</h4>
+<p>For a second individual (ID 20215) the algorithm also delivered a winter and a summer home range in 2019 and 2020, and a winter home range only in 2021. In contrast to ID 20211 with only very short migrations these lasted from 1 hour to 12 days (Figure 7; Table 2). In 2021 a segment remained which was neither a seasonal migration nor an excursion.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-plot7" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="index_files/figure-html/fig-plot7-1.png" class="img-fluid figure-img" width="1344"></p>
+<p></p><figcaption class="figure-caption"><em>Figure</em>&nbsp;7<em>.</em> <em>Yearly seasonal migrations and home ranges, without excursions for ID 20215.</em></figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped">
+<caption>Table 2. Seasonal migration results of ID 20215 with start and end date, and the duration.</caption>
+<colgroup>
+<col style="width: 9%">
+<col style="width: 8%">
+<col style="width: 10%">
+<col style="width: 28%">
+<col style="width: 28%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">id</th>
+<th style="text-align: center;">year</th>
+<th style="text-align: center;">seg_id</th>
+<th style="text-align: center;">seg_start</th>
+<th style="text-align: center;">seg_end</th>
+<th style="text-align: right;">duration</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">20215</td>
+<td style="text-align: center;">2019</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">2019-10-07 19:00:42</td>
+<td style="text-align: center;">2019-10-08 22:00:14</td>
+<td style="text-align: right;">27 hours</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">20215</td>
+<td style="text-align: center;">2020</td>
+<td style="text-align: center;">14</td>
+<td style="text-align: center;">2020-04-26 03:00:58</td>
+<td style="text-align: center;">2020-05-04 03:01:12</td>
+<td style="text-align: right;">192 hours</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">20215</td>
+<td style="text-align: center;">2020</td>
+<td style="text-align: center;">22</td>
+<td style="text-align: center;">2020-09-26 21:02:46</td>
+<td style="text-align: center;">2020-09-26 22:03:04</td>
+<td style="text-align: right;">1 hours</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">20215</td>
+<td style="text-align: center;">2021</td>
+<td style="text-align: center;">30</td>
+<td style="text-align: center;">2021-05-08 21:00:16</td>
+<td style="text-align: center;">2021-05-20 22:00:42</td>
+<td style="text-align: right;">289 hours</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="comparison-to-the-results-of-the-migro-method" class="level3">
+<h3 class="anchored" data-anchor-id="comparison-to-the-results-of-the-migro-method">Comparison to the Results of the “MigrO Method”</h3>
+<p>The “MigrO Method” defined polygons of residency with a start and end date (Table 3). Thus, migration data were the locations between these home ranges. ID 20211 had 6 home ranges, what means that there were 3 seasonal migrations between. The migration dates from my algorithm in 2019 exactly fitted the ones of the “MigrO Method” (2019-10-10 to 2019-10-11). In 2020 they differed in one day in spring (start on 2020-05-06 vs.&nbsp;2020-05-05) and in autumn (start on 2020-09-25 vs.&nbsp;2020-09-24). ID 20215 had also 6 home ranges in the “MigrO Method”. In 2019 the migration dates again perfectly fitted the ones of the “MigrO Method” (2019-10-07 to 2019-10-08), although the end date there was only on 2019-10-09. In 2020 in spring the start date differed in seven days (2020-04-26 vs.&nbsp;2020-05-03), and the end date in tree days (2020-05-04 vs.&nbsp;2020-05-07). In autumn the dates exactly fitted again (2020-09-26). In spring 2021 there finally was a difference of one day in start (2021-05-08 vs.&nbsp;2021-05-07).</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped">
+<caption>Table 3. Seasonal home ranges of ID 20211 and ID 20215 resulting from MigrO Method.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: center;">id</th>
+<th style="text-align: center;">year</th>
+<th style="text-align: center;">hr_start</th>
+<th style="text-align: center;">hr_end</th>
+<th style="text-align: center;">duration</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">20211</td>
+<td style="text-align: center;">2019</td>
+<td style="text-align: center;">29.05.2019 12:00</td>
+<td style="text-align: center;">10.10.2019 08:00</td>
+<td style="text-align: center;">133 days</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">20211</td>
+<td style="text-align: center;">2019</td>
+<td style="text-align: center;">11.10.2019 23:00</td>
+<td style="text-align: center;">29.02.2020 02:00</td>
+<td style="text-align: center;">140 days</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">20211</td>
+<td style="text-align: center;">2020</td>
+<td style="text-align: center;">01.03.2020 08:00</td>
+<td style="text-align: center;">05.05.2020 20:00</td>
+<td style="text-align: center;">65 days</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">20211</td>
+<td style="text-align: center;">2020</td>
+<td style="text-align: center;">07.05.2020 13:00</td>
+<td style="text-align: center;">24.09.2020 13:00</td>
+<td style="text-align: center;">140 days</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">20211</td>
+<td style="text-align: center;">2020</td>
+<td style="text-align: center;">26.09.2020 06:00</td>
+<td style="text-align: center;">28.02.2021 02:00</td>
+<td style="text-align: center;">154 days</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">20211</td>
+<td style="text-align: center;">2021</td>
+<td style="text-align: center;">01.03.2021 15:00</td>
+<td style="text-align: center;">27.05.2021 07:00</td>
+<td style="text-align: center;">86 days</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">20215</td>
+<td style="text-align: center;">2019</td>
+<td style="text-align: center;">07.06.2019 23:00</td>
+<td style="text-align: center;">07.10.2019 06:01</td>
+<td style="text-align: center;">121 days</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">20215</td>
+<td style="text-align: center;">2019</td>
+<td style="text-align: center;">09.10.2019 09:00</td>
+<td style="text-align: center;">29.02.2020 04:00</td>
+<td style="text-align: center;">142 days</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">20215</td>
+<td style="text-align: center;">2020</td>
+<td style="text-align: center;">01.03.2020 03:00</td>
+<td style="text-align: center;">03.05.2020 06:00</td>
+<td style="text-align: center;">63 days</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">20215</td>
+<td style="text-align: center;">2020</td>
+<td style="text-align: center;">07.05.2020 16:00</td>
+<td style="text-align: center;">26.09.2020 00:02</td>
+<td style="text-align: center;">141 days</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">20215</td>
+<td style="text-align: center;">2020</td>
+<td style="text-align: center;">27.09.2020 01:00</td>
+<td style="text-align: center;">28.02.2021 18:00</td>
+<td style="text-align: center;">154 days</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">20215</td>
+<td style="text-align: center;">2021</td>
+<td style="text-align: center;">01.03.2021 14:01</td>
+<td style="text-align: center;">07.05.2021 22:00</td>
+<td style="text-align: center;">67 days</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</section>
+<section id="discussion" class="level2">
+<h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
+<p>The algorithm delivered reliable results of seasonal migrations for these two example individuals. Start and end dates were named precisely to the hour. As expected migration duration was usually short. Another advantage is that it detects resident behaviour too, i.e.&nbsp;only overlapping home ranges. However, the application of this algorithm on other individuals could be challenging, as the settings were taken regarding an optimized performance for ID 20211. This individual showed distinct seasonal migrations. The mean distance thresholds to classify moving and static trajectory segments I set by only visual assessment, and also the buffer around the convex hulls. For individuals with less distinct migration behaviour the results might be therefore less precise. For example, in spring some individuals attempt to reach their summer home range, but return after a while, probably because there was still too much snow. If such an individual finally succeeds a long migration duration would result, as the algorithm does not detect and cut these excursions. The “MigrO method” does, but its disadvantage is the setting of the 1st March as the yearly start date.</p>
+<p>Further disadvantages of my algorithm are that the first and the last 15 days of the trajectory are cut and that dispersing behaviour in the end of the trajectory is not detected. In addition, cutting the migration segments with the home ranges results in loosing the real start and end location of the migration. In case a migration segment only consists of two locations and both are inside the home ranges, that migration would be removed. It is therefore necessary to add them again. This would then also enable pattern detection like hopping from one protected area to another. Thus, further development of the algorithm is needed.</p>
+</section>
+<section id="acknowledgement" class="level2">
+<h2 class="anchored" data-anchor-id="acknowledgement">Acknowledgement</h2>
+<p>I would like to thank Patrick Laube for including me in the course and giving me such exciting content regarding Computational Movement analysis. A special thank I address to Nils Ratnaweera for the great support during the classes and for this analysis.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
+<div id="ref-Allen2014" class="csl-entry" role="doc-biblioentry">
+Allen, A. M., J. Månsson, A. Jarnemo, and N. Bunnefeld. 2014. <a href="https://doi.org/10.1007/s10344-014-0797-0"><span class="nocase">The impacts of landscape structure on the winter movements and habitat selection of female red deer</span></a>. European Journal of Wildlife Research 60:411–421.
+</div>
+<div id="ref-Cagnacci2011" class="csl-entry" role="doc-biblioentry">
+Cagnacci, F., S. Focardi, M. Heurich, A. Stache, A. J. M. Hewison, N. Morellet, P. Kjellander, J. D. C. Linnell, A. Mysterud, M. Neteler, L. Delucchi, F. Ossi, and F. Urbano. 2011. <a href="https://doi.org/10.1111/j.1600-0706.2011.19441.x"><span class="nocase">Partial migration in roe deer: Migratory and resident tactics are end points of a behavioural gradient determined by ecological factors</span></a>. Oikos 120:1790–1802.
+</div>
+<div id="ref-Ciuti2012" class="csl-entry" role="doc-biblioentry">
+Ciuti, S., J. M. Northrup, T. B. Muhly, S. Simi, M. Musiani, J. A. Pitt, and M. S. Boyce. 2012. <a href="https://doi.org/10.1371/journal.pone.0050611"><span class="nocase">Effects of Humans on Behaviour of Wildlife Exceed Those of Natural Predators in a Landscape of Fear</span></a>. PLoS ONE 7.
+</div>
+<div id="ref-Clutton-Brock1982" class="csl-entry" role="doc-biblioentry">
+Clutton-Brock, T. H., F. E. Guinness, and S. D. Albon. 1982. <span class="nocase">Red Deer: Behaviour and Ecology of Two Sexes</span>. G. B. Schaller, editor. Wildlife Behaviour; Ecology, Edinburgh.
+</div>
+<div id="ref-Dingle2007" class="csl-entry" role="doc-biblioentry">
+Dingle, H., and V. Alistair Drake. 2007. <a href="https://doi.org/10.1641/B570206"><span class="nocase">What is migration?</span></a> BioScience 57:113–121.
+</div>
+<div id="ref-Fellmann2022" class="csl-entry" role="doc-biblioentry">
+Fellmann, U. 2022. <span class="nocase">Migration Behavior Analysis of Red Deer ( Cervus elaphus ) and the Influence of Environmental Covariates on Migration Timing</span>. Master's Thesis, Migration Behavior Analysis of Red Deer (Cervus elaphus); the Influence of Environmental Covariates on Migration Timing GEO 511 Master’s Thesis Author Ursula Fellmann 13-928-916 Supervised by Prof. Dr. Robert Weibel Dr. Wibke Peters (Wibke.Peters@lwf.b.
+</div>
+<div id="ref-Laube2017" class="csl-entry" role="doc-biblioentry">
+Laube, P. 2017. <a href="https://doi.org/10.1002/9781118786352.wbieg0593"><span>Representation: Trajectories</span></a>. International Encyclopedia of Geography: People, the Earth, Environment and Technology 1–11.
+</div>
+<div id="ref-Laube2011" class="csl-entry" role="doc-biblioentry">
+Laube, P., and R. S. Purves. 2011. <a href="https://doi.org/10.1111/j.1467-9671.2011.01256.x"><span class="nocase">How fast is a cow? Cross-Scale Analysis of Movement Data</span></a>. Transactions in GIS 15:401–418.
+</div>
+<div id="ref-Laundre2010" class="csl-entry" role="doc-biblioentry">
+Laundré, J. W., L. Hernández, and W. J. Ripple. 2010. <span class="nocase">The Landscape of Fear: Ecological Implications of Being Afraid</span>. The Open Ecology Journal 3:1–7.
+</div>
+<div id="ref-Mumme2023" class="csl-entry" role="doc-biblioentry">
+Mumme, S., A. D. Middleton, P. Ciucci, J. D. Groeve, A. Corradini, E. O. Aikens, F. Ossi, P. Atwood, N. Balkenhol, E. K. Cole, L. Debeffe, and S. R. Dewey. 2023. <a href="https://doi.org/10.1111/gcb.16769"><span class="nocase">Wherever I may roam — ­ Human activity alters movements of red deer (Cervus elaphus) and elk (Cervus canadensis) across two continents</span></a>. Global Change Biology 1–14.
+</div>
+<div id="ref-Mysterud2011" class="csl-entry" role="doc-biblioentry">
+Mysterud, A., L. E. Loe, B. Zimmermann, R. Bischof, and E. Meisingset. 2011. <a href="https://doi.org/10.1111/j.1600-0706.2010.19439.x"><span class="nocase">Partial migration in expanding red deer populations at northern latitudes - a role for density dependence?</span></a> Oikos 1817–1825.
+</div>
+<div id="ref-Nathan2008" class="csl-entry" role="doc-biblioentry">
+Nathan, R., W. M. Getz, E. Revilla, M. Holyoak, R. Kadmon, D. Saltz, and P. E. Smouse. 2008. <a href="https://doi.org/10.1073/pnas.0800375105"><span class="nocase">A movement ecology paradigm for unifying organismal movement research</span></a>. Proceedings of the National Academy of Sciences of the United States of America 105:19052–19059.
+</div>
+<div id="ref-Schweiger2015" class="csl-entry" role="doc-biblioentry">
+Schweiger, A. K., M. Schütz, P. Anderwald, M. E. Schaepman, M. Kneubühler, R. Haller, and A. C. Risch. 2015. <a href="https://doi.org/10.1186/s40462-015-0033-x"><span class="nocase">Foraging ecology of three sympatric ungulate species - behavioural and resource maps indicate differences between chamois, ibex and red deer</span></a>. Movement Ecology 3:6.
+</div>
+<div id="ref-Sigrist2022" class="csl-entry" role="doc-biblioentry">
+Sigrist, B., C. Signer, S. D. Wellig, A. Ozgul, F. Filli, H. Jenny, D. Thiel, S. Wirthner, and R. F. Graf. 2022. <a href="https://doi.org/10.1002/ece3.9048"><span class="nocase">Green up selection by red deer in heterogeneous , dominated landscapes of Central Europe</span></a>. Ecology and Evolution 1–13.
+</div>
+<div id="ref-Zweifel-Schielly2009" class="csl-entry" role="doc-biblioentry">
+Zweifel-Schielly, B., M. Kreuzer, K. C. Ewald, and W. Suter. 2009. <a href="https://doi.org/10.1111/j.1600-0587.2008.05178.x"><span class="nocase">Habitat selection by an Alpine ungulate: The significance of forage characteristics varies with scale and season</span></a>. Ecography 32:103–113.
+</div>
+<div id="ref-Zweifel-Schielly2012" class="csl-entry" role="doc-biblioentry">
+Zweifel-Schielly, B., Y. Leuenberger, M. Kreuzer, and W. Suter. 2012. <a href="https://doi.org/10.1111/j.1469-7998.2011.00853.x"><span class="nocase">A herbivore’s food landscape: Seasonal dynamics and nutritional implications of diet selection by a red deer population in contrasting Alpine habitats</span></a>. Journal of Zoology 286:68–80.
+</div>
+</div>
+</section>
+<section id="appendix" class="level2">
+<h2 class="anchored" data-anchor-id="appendix">Appendix</h2>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># preprocessing to calculate distances between locations in a temporal window</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>log_file <span class="ot">&lt;-</span> <span class="st">"Q:/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/code/movement/migration/data_work/logfile15.txt"</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>log_conn <span class="ot">&lt;-</span> <span class="fu">file</span>(log_file, <span class="at">open =</span> <span class="st">"wt"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sink</span>(log_conn,<span class="at">append =</span> <span class="cn">TRUE</span>,<span class="at">type =</span> <span class="st">"message"</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co"># load df as sf</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>locs_win <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">"Q:/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/code/movement/migration/origdata/locs_win.csv"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_as_sf</span>(<span class="at">coords =</span> <span class="fu">c</span>(<span class="st">"x"</span>, <span class="st">"y"</span>), <span class="at">crs =</span> <span class="dv">2056</span>, <span class="at">remove =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co"># define window of t +/- 15 days an run through sf (+/- 4 minutes)</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>locs_win <span class="ot">&lt;-</span> locs <span class="sc">%&gt;%</span> </span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">t_min15 =</span> t <span class="sc">-</span> <span class="dv">15</span><span class="sc">*</span><span class="dv">24</span><span class="sc">*</span><span class="dv">3600</span> <span class="sc">-</span> <span class="dv">240</span>,</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>         <span class="at">t_plus15 =</span> t <span class="sc">+</span> <span class="dv">15</span><span class="sc">*</span><span class="dv">24</span><span class="sc">*</span><span class="dv">3600</span> <span class="sc">+</span> <span class="dv">240</span>,</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>         <span class="at">deployment =</span> <span class="fu">as.factor</span>(deployment), </span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>         <span class="at">dep_num =</span> <span class="fu">as.numeric</span>(deployment)) <span class="sc">%&gt;%</span> </span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(loc_nr, deployment, dep_num, t, t_min15, t_plus15, x, y)</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="do">## find moving and static phases in trajectories</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="co"># use cma_movement.bat to run code parallel with 40 cores</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="co"># number of tile each session calculates</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>arg <span class="ot">&lt;-</span> <span class="fu">commandArgs</span>(<span class="at">trailingOnly =</span> <span class="cn">FALSE</span>) <span class="co"># command line argument</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>k <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(arg[<span class="dv">6</span>])</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>k</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>n.parallel <span class="ot">&lt;-</span> <span class="fu">split</span>(<span class="fu">seq</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(<span class="fu">unique</span>(locs_win<span class="sc">$</span>dep_num))), <span class="fu">sort</span>(<span class="fu">seq</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(<span class="fu">unique</span>(locs_win<span class="sc">$</span>dep_num))) <span class="sc">%%</span> <span class="dv">40</span>))</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>locs_win <span class="ot">&lt;-</span> locs_win <span class="sc">%&gt;%</span> <span class="fu">filter</span>(dep_num <span class="sc">%in%</span> n.parallel[[k]])</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="co"># create output table</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>output <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">loc_nr =</span> <span class="fu">numeric</span>(),</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>                     <span class="at">deployment =</span> <span class="fu">logical</span>(),</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>                     <span class="at">dep_nr =</span> <span class="fu">numeric</span>(),</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>                     <span class="at">t =</span> <span class="fu">POSIXct</span>(),</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>                     <span class="at">t_min15 =</span> <span class="fu">POSIXct</span>(),</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>                     <span class="at">t_plus15 =</span> <span class="fu">POSIXct</span>(),</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>                     <span class="at">x =</span> <span class="fu">numeric</span>(),</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>                     <span class="at">y =</span> <span class="fu">numeric</span>(),</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>                     <span class="at">in_range =</span> <span class="fu">logical</span>(),</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>                     <span class="at">stepMean30 =</span> <span class="fu">numeric</span>())</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a><span class="co"># loop through deployments and locations</span></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (d <span class="cf">in</span> <span class="fu">unique</span>(locs_win<span class="sc">$</span>dep_num)){</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>  locs_win_filter <span class="ot">&lt;-</span> locs_win <span class="sc">%&gt;%</span></span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(dep_num <span class="sc">==</span> d) <span class="sc">%&gt;%</span></span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">t_range =</span> <span class="fu">interval</span>(<span class="fu">min</span>(t), <span class="fu">max</span>(t)),</span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>           <span class="at">in_range =</span> <span class="fu">case_when</span>(t_min15 <span class="sc">%within%</span> t_range <span class="sc">&amp;</span></span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>                                  t_plus15 <span class="sc">%within%</span> t_range <span class="sc">~</span> <span class="cn">TRUE</span>,</span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>                                <span class="cn">TRUE</span> <span class="sc">~</span> <span class="cn">FALSE</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>t_range)</span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (l <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(locs_win_filter)){</span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a>    <span class="co"># filter for data of current loop run</span></span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>    now <span class="ot">&lt;-</span> locs_win_filter[l,]</span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a>    obs_win <span class="ot">&lt;-</span>  locs_win_filter <span class="sc">%&gt;%</span> </span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(t <span class="sc">&gt;=</span> <span class="fu">as.POSIXct</span>(now<span class="sc">$</span>t_min15, <span class="at">tz =</span> <span class="st">"UTC"</span>),</span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>             t <span class="sc">&lt;=</span> <span class="fu">as.POSIXct</span>(now<span class="sc">$</span>t_plus15, <span class="at">tz =</span> <span class="st">"UTC"</span>)) </span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a>    <span class="co"># calculate and append stepMean30 to now</span></span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a>    now<span class="sc">$</span>stepMean30 <span class="ot">&lt;-</span> <span class="fu">st_distance</span>(obs_win, now) <span class="sc">%&gt;%</span> <span class="fu">as.numeric</span>() <span class="sc">%&gt;%</span> <span class="fu">mean</span>()</span>
+<span id="cb1-77"><a href="#cb1-77" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-78"><a href="#cb1-78" aria-hidden="true" tabindex="-1"></a>    <span class="co"># append now to output</span></span>
+<span id="cb1-79"><a href="#cb1-79" aria-hidden="true" tabindex="-1"></a>    output <span class="ot">&lt;-</span> <span class="fu">rbind</span>(output, now)</span>
+<span id="cb1-80"><a href="#cb1-80" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-81"><a href="#cb1-81" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-82"><a href="#cb1-82" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-83"><a href="#cb1-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-84"><a href="#cb1-84" aria-hidden="true" tabindex="-1"></a><span class="fu">fwrite</span>(output, <span class="fu">paste0</span>(<span class="st">"Q:/prjdata/zool/ungulate/ung_monitoring/telemetry/reddeer/behaviour/code/movement/migration/data_work/win15/output_"</span>, k,<span class="st">".csv"</span>))</span>
+<span id="cb1-85"><a href="#cb1-85" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-86"><a href="#cb1-86" aria-hidden="true" tabindex="-1"></a><span class="fu">sink</span>()</span>
+<span id="cb1-87"><a href="#cb1-87" aria-hidden="true" tabindex="-1"></a><span class="fu">close</span>(log_conn)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
 </section>
 
 </main>
